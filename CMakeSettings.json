@@ -1,0 +1,13 @@
+﻿{
+  "configurations": [
+    {
+      "name": "Visual Studio 15 x64",
+      "generator": "Visual Studio 15 2017 Win64",
+      "configurationType": "Release",
+      "buildRoot": "${workspaceRoot}\\build\\${name}",
+      "installRoot": "${workspaceRoot}\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=D:/library/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=Release",
+      "buildCommandArgs": "-m -v:minimal"
+    }
+  ]
+}

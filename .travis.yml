@@ -1,0 +1,48 @@
+language: cpp
+compiler: gcc
+dist: xenial
+
+env: BUILD_HOME=${TRAVIS_BUILD_DIR}/build BUILD_TYPE=Release
+
+addons:
+  apt:
+    packages:
+      - git
+      - curl
+      - wget
+      - cmake
+      - cmake-data
+      - build-essential
+      - libboost-dev
+      - libprotobuf-dev
+      - protobuf-compiler
+      - qt5-default
+      - qttools5-dev-tools
+      - libqt5opengl5-dev
+
+before_install:
+#  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+#  - sudo apt-get update -qq
+#  - sudo add-apt-repository -y ppa:mhier/libboost-latest
+#  - sudo apt-get update -qq
+#  - sudo add-apt-repository -y ppa:beineri/opt-qt-5.12.3-xenial
+#  - sudo apt-get update -qq
+  - sudo add-apt-repository -y ppa:openmw/openmw
+  - sudo apt-get update -qq
+
+install:
+#  - sudo apt-get install -qq g++-8
+#  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 90
+#  - sudo apt-get install -qq libboost1.68-dev
+#  - sudo apt-get install -qq libglew-dev libglfw3-dev qt512-meta-minimal
+  - sudo apt-get install -qq libopenscenegraph-3.4-131
+
+before_script: skip
+#  - source /opt/qt512/bin/qt512-env.sh
+
+script:
+  - mkdir -p ${BUILD_HOME} && cmake ${TRAVIS_BUILD_DIR}
+  - cmake --build ${BUILD_HOME} --config ${BUILD_TYPE};
+
+notifications:
+  email: false

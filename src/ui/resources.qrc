@@ -1,0 +1,17 @@
+<RCC>
+    <qresource>
+        <file>images/icon.ico</file>
+        <file>images/file_open.png</file>
+        <file>images/file_save.png</file>
+        <file>images/file.png</file>
+        <file>images/print.png</file>
+        <file>images/setup.png</file>
+        <file>images/lock.png</file>
+        <file>images/draw.png</file>
+        <file>images/delete.png</file>
+        <file>images/cancel.png</file>
+        <file>images/tree.png</file>
+        <file>images/subjectgeographic.png</file>
+        <file>images/geographical-position.png</file>
+    </qresource>
+</RCC>

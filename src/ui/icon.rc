@@ -1,0 +1,4 @@
+#include "winres.h"
+
+IDI_ICON1 ICON
+DISCARDABLE     "images/icon.ico"

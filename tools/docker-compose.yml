@@ -1,0 +1,12 @@
+version: "3"
+services:
+  protype:
+    image: protype_env:latest
+    volumes:
+      - /home/zhihui/workspace/protype:/project:ro
+      - /home/zhihui/workspace/protype/build:/build
+    networks:
+      - default
+networks:
+  default:
+    driver: bridge
