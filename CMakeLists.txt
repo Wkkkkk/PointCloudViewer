@@ -5,6 +5,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 set(COPY_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH})
 set(CMAKE_CXX_FLAGS "-DBOOST_ALL_DYN_LINK")
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 #output setting for windows compatibility
 IF (WIN32)
@@ -26,12 +27,18 @@ find_package(Boost COMPONENTS log thread date_time filesystem system REQUIRED)
 find_package(Draco REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(libssh REQUIRED)
+find_package(libLAS REQUIRED)
+
+message(STATUS "libssh:${LIBSSH_LIBRARIES}")
+message(STATUS "libLAS_LIBRARIES:${libLAS_LIBRARIES} at ${libLAS_LIBRARY_DIRS}")
 
 include_directories(
     ${Boost_INCLUDE_DIR}
     ${OPENSCENEGRAPH_INCLUDE_DIRS}
         ${YAML_CPP_INCLUDE_DIR}
         ${EIGEN3_INCLUDE_DIR}
+        ${libLAS_INCLUDE_DIRS}
 )
 
 link_directories(

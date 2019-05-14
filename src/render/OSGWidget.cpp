@@ -21,6 +21,8 @@
 
 #include <QtGui/QKeyEvent>
 #include <QtGui/QPainter>
+#include <QtCore/QFile>
+#include <QtCore/QTextStream>
 
 #include <osg/Timer>
 #include <osg/Geometry>
@@ -37,29 +39,43 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgDB/ReadFile>
 
-#include "Common.h"
 #include "OSGWidget.h"
 #include "Singleton.h"
 #include "NodeCallback.h"
 #include "NodeTreeInfo.h"
 #include "NodeTreeSearch.h"
+#include "CoorConv.hpp"
 
 using namespace osgHelper;
+
+osg::Vec3d utm2llh(const osg::Vec3d &enu) {
+    WGS84Corr latlon;
+    UTMXYToLatLon(enu.x(), enu.y(), 50, false, latlon);
+
+    return {RadToDeg(latlon.lat), RadToDeg(latlon.log), enu.z()};
+}
 
 OSGWidget::OSGWidget(QWidget *parent, Qt::WindowFlags f)
         : QOpenGLWidget(parent, f),
           _graphicsWindow(new osgViewer::GraphicsWindowEmbedded(this->x(), this->y(), this->width(), this->height())),
           _viewer(nullptr),
           root_node_(nullptr),
-          text_node_(nullptr) {
+          text_node_(nullptr),
+          is_testing_(true),
+          update_timer_(new QTimer(this)) {
     // enable keypress event
     this->setFocusPolicy(Qt::StrongFocus);
+
+    connect(update_timer_.data(), &QTimer::timeout, this, &OSGWidget::updateScene);
 }
 
 void OSGWidget::init() {
     initSceneGraph();
     initHelperNode();
     initCamera();
+
+    initTrace();
+    cur_position = trace_vec_[0];
 
     startTimer(1000 / 60.f);  // 60hz
 }
@@ -72,17 +88,34 @@ void OSGWidget::initSceneGraph() {
     point_cloud_node->setName(point_cloud_node_name);
     root_node_->addChild(point_cloud_node);
 
+    osg::ref_ptr<osg::Switch> dsm_node = new osg::Switch;
+    dsm_node->setName(dsm_node_name);
+    root_node_->addChild(dsm_node);
+
+    osg::ref_ptr<osg::Switch> building_node = new osg::Switch;
+    building_node->setName(building_node_name);
+    root_node_->addChild(building_node);
+
     osg::ref_ptr<osg::PositionAttitudeTransform> uav_node = new osg::PositionAttitudeTransform;
     uav_node->setName(uav_node_name);
     {
-        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-        geode->setName("UAV");
+        osg::ref_ptr<osg::Node> plane = osgDB::readNodeFile("./model/uav.osgb");
+        if (plane.valid()) {
+            osg::ref_ptr<osg::MatrixTransform> mt_node = new osg::MatrixTransform;
+            mt_node->setMatrix(osg::Matrixd::scale(0.1, 0.1, 0.1));
 
-        osg::ref_ptr<osg::ShapeDrawable> point_sphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3d(), 0.5f));
-        point_sphere->setColor(osg::Vec4(1.0, 1.0, 0.0, 1.0));
-        geode->addDrawable(point_sphere);
+            mt_node->addChild(plane);
+            uav_node->addChild(mt_node);
+        } else {
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+            geode->setName("UAV");
 
-        uav_node->addChild(geode);
+            osg::ref_ptr<osg::ShapeDrawable> point_sphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3d(), 0.5f));
+            point_sphere->setColor(osg::Vec4(1.0, 1.0, 0.0, 1.0));
+            geode->addDrawable(point_sphere);
+
+            uav_node->addChild(geode);
+        }
     }
     root_node_->addChild(uav_node);
 
@@ -98,6 +131,19 @@ void OSGWidget::initSceneGraph() {
     osg::ref_ptr<osg::Switch> helper_node = new osg::Switch;
     helper_node->setName(helper_node_name);
     root_node_->addChild(helper_node);
+
+    {
+        osg::ref_ptr<osg::StateSet> ss = new osg::StateSet;
+        ss->setMode(GL_LIGHTING, osg::StateAttribute::ON);
+        osg::ref_ptr<osg::Light> light = new osg::Light;
+        light->setAmbient(osg::Vec4(.8f, .5f, .3f, .8f));
+        ss->setAttribute(light, osg::StateAttribute::ON);
+        ss->setMode(GL_BLEND, osg::StateAttribute::ON);
+        ss->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+        ss->setMode(GL_MULTISAMPLE_ARB, osg::StateAttribute::ON);
+
+        dsm_node->setStateSet(ss.get());
+    }
 }
 
 void OSGWidget::initCamera() {
@@ -511,13 +557,14 @@ void OSGWidget::updatePointCloud() {
     static osg::ref_ptr<osg::Switch> point_cloud_node = dynamic_cast<osg::Switch *>(
             NodeTreeSearch::findNodeWithName(root_node_, point_cloud_node_name));
 
+    cur_points = core::Singleton<Array>::getInstance().getValue();
+
     osg::ref_ptr<osg::Geode> geode = new osg::Geode;
     osg::ref_ptr<osg::Geometry> geom = new osg::Geometry;
     osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
     osg::ref_ptr<osg::Vec3Array> colors = new osg::Vec3Array;
 
-    auto points = core::Singleton<Array>::getInstance().getValue();
-    for (const auto &point : points) {
+    for (const auto &point : cur_points) {
         vertices->push_back(point);
         colors->push_back(calculateColorForPoint(point));
     }
@@ -553,4 +600,239 @@ osg::Vec3d OSGWidget::calculateColorForPoint(const osg::Vec3d &point) const {
     if (range == 0) range = 1;
 
     return Colors[Colors.size() - range];
+}
+
+void OSGWidget::initTrace() {
+    //test trace
+    trace_vec_.clear();
+    trace_vec_.shrink_to_fit();
+
+    int height = 350;
+    trace_vec_.emplace_back(201952, 2502601, height);
+    trace_vec_.emplace_back(201889, 2502756, height);
+    trace_vec_.emplace_back(202948, 2502650, height);
+    trace_vec_.emplace_back(202804, 2501826, height);
+    trace_vec_.emplace_back(202062, 2501918, height);
+    trace_vec_.emplace_back(202085, 2502578, height);
+    trace_vec_.emplace_back(202804, 2502493, height);
+    trace_vec_.emplace_back(202921, 2502116, height);
+    trace_vec_.emplace_back(202128, 2502150, height);
+
+    std::vector<osg::Vec3d> intense_trace;
+    int inter = 50;
+
+    for (int i = 0; i < trace_vec_.size() - 1; ++i) {
+        osg::Vec3d p1 = trace_vec_[i];
+        osg::Vec3d p2 = trace_vec_[i + 1];
+
+        intense_trace.push_back(p1);
+
+        osg::Vec3d p12 = p2 - p1;
+        double distance = p12.length();
+        p12.normalize();
+        int steps = static_cast<int>(distance / inter);
+        int cnt = 0;
+        while (cnt < steps) {
+            cnt++;
+
+            osg::Vec3d temp = p1 + p12 * cnt * inter;
+            intense_trace.push_back(temp);
+        }
+    }
+
+    std::swap(trace_vec_, intense_trace);
+}
+
+void OSGWidget::loadDSM(const std::string &file_path) {
+    static osg::ref_ptr<osg::Switch> dsm_node =
+            dynamic_cast<osg::Switch *>(NodeTreeSearch::findNodeWithName(root_node_, dsm_node_name));
+
+    osg::ref_ptr<osg::Node> dsm = osgDB::readNodeFile(file_path);
+
+    if (!dsm.valid()) {
+        std::cout << "failed to load dsm file: " << file_path << std::endl;
+        return;
+    }
+
+    dsm_node->removeChildren(0, dsm_node->getNumChildren());
+    dsm_node->addChild(dsm);
+
+    osg::BoundingSphere bs = dsm->getBound();
+    std::cout << "dsm center " << bs.center().x() << " "
+              << bs.center().y() << " " << bs.center().z() << std::endl;
+
+    _terrainMani->setHomePosition(cur_position + osg::Vec3(0.0, 0.0, 1000.0), cur_position, osg::Vec3(0, 1, 0));
+    _viewer->setCameraManipulator(_terrainMani.get());
+
+    updateUAVPose(cur_position);
+}
+
+void OSGWidget::loadBuildings(const std::string &file_path) {
+    static osg::ref_ptr<osg::Switch> building_node =
+            dynamic_cast<osg::Switch *>(NodeTreeSearch::findNodeWithName(root_node_, building_node_name));
+
+    QString file_path_str = QString::fromStdString(file_path);
+    QFile file(file_path_str);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+    QFileInfo fileInfo(file_path_str);
+    if (!fileInfo.exists()) return;
+    QString file_dir = fileInfo.path();
+
+    osg::ref_ptr<osg::PositionAttitudeTransform> building_trans_node = new osg::PositionAttitudeTransform;
+    building_trans_node->setName(building_trans_node_name);
+    building_trans_node->setPosition(osg::Vec3d(0, 0, 300));
+    building_node->removeChildren(0, building_node->getNumChildren());
+    building_node->addChild(building_trans_node);
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString lineStr = in.readLine();
+        QStringList sections = lineStr.split(QRegExp("[, \t]"));
+
+        if (sections.size() != 5) continue;
+        QString nameStr = sections[0];
+        double x = sections[1].toDouble();
+        double y = sections[2].toDouble();
+        double z = sections[3].toDouble();
+        double r = sections[4].toDouble();
+        QString node_file_path = file_dir + "/" + nameStr;
+
+        osg::ref_ptr<osg::PagedLOD> page_lod = new osg::PagedLOD;
+        page_lod->setName(nameStr.toStdString());
+        page_lod->setCenter(osg::Vec3d(x, y, z));
+        page_lod->setCenterMode(osg::LOD::USER_DEFINED_CENTER);
+        page_lod->setRadius(r);
+        page_lod->setFileName(0, node_file_path.toStdString());
+        page_lod->setRange(0, 0, 8000.0f);
+        page_lod->setRangeMode(osg::LOD::DISTANCE_FROM_EYE_POINT);
+
+        building_trans_node->addChild(page_lod.release());
+    }
+}
+
+void OSGWidget::activeTraceRefresh(bool is_active) {
+    is_testing_ = false;
+
+    if (is_active) {
+        beginTraceRefresh();
+    } else {
+        finishTraceRefresh();
+    };
+}
+
+void OSGWidget::activeTestRefresh(bool is_active) {
+    is_testing_ = true;
+
+    if (is_active) {
+        beginTraceRefresh();
+    } else {
+        finishTraceRefresh();
+    }
+}
+
+void OSGWidget::beginTraceRefresh() {
+    //for setViewMatrixAsLookAt() to work
+    _viewer->setCameraManipulator(nullptr);
+
+    update_timer_->start(30);
+}
+
+void OSGWidget::finishTraceRefresh() {
+    _terrainMani->setHomePosition(cur_position + osg::Vec3(0.0, 0.0, 1000.0), cur_position, osg::Vec3(0, 1, 0));
+    _viewer->setCameraManipulator(_terrainMani);
+
+    update_timer_->stop();
+}
+
+void OSGWidget::updateScene() {
+
+    // tips
+    {
+        std::cout << "cur_position: " << cur_position << " point num: " << cur_points.size() << std::endl;
+    }
+
+    //calculate intersection for current dsm height and building id
+    Result result = intersectionCheck();
+
+    //match the point cloud data
+//    pointCloudMatch(result);
+
+//    postResult(result);
+}
+
+Result OSGWidget::intersectionCheck() {
+    static osg::ref_ptr<osg::Switch> model_node =
+            dynamic_cast<osg::Switch *>(NodeTreeSearch::findNodeWithName(root_node_, model_node_name));
+
+    osg::Vec3d start = cur_position;
+    start.z() += 1000;
+    osg::Vec3d end = cur_position;
+    end.z() -= 1000;
+
+    int id = -1;
+    double build_area = 0;
+    osg::Vec3d ground_point = cur_position;
+    ground_point.z() = 0;
+
+    osg::Vec3d llh = utm2llh(cur_position);
+
+    osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(start, end);
+    osgUtil::IntersectionVisitor iv(intersector.get());
+
+    model_node->setNodeMask(0);
+    root_node_->accept(iv);
+    model_node->setNodeMask(1);
+
+    if (intersector->containsIntersections()) {
+        auto intersections = intersector->getIntersections();
+
+        for (const auto &intersection : intersections) {
+            osg::NodePath node_path = intersection.nodePath;
+
+            bool is_building = false;
+            bool is_dsm = false;
+            for (const auto &node : node_path) {
+                if (node->getName() == building_node_name) is_building = true;
+                if (node->getName() == dsm_node_name) is_dsm = true;
+            }
+
+            if (is_building) //building node
+            {
+                osg::ref_ptr<osg::Node> node = node_path.back();
+
+                osg::ref_ptr<osg::Geode> geode = dynamic_cast<osg::Geode *>(node.get());
+                if (geode.valid()) {
+                    osg::ref_ptr<osg::Drawable> drawable = geode->getDrawable(0);
+                    if (drawable.valid()) {
+                        osg::ref_ptr<osg::Geometry> geom = dynamic_cast<osg::Geometry *>(drawable.get());
+                        geom->setUseDisplayList(false);
+                        geom->setUseVertexBufferObjects(true);
+                        osg::ref_ptr<osg::Vec3Array> colors = dynamic_cast<osg::Vec3Array *>(geom->getColorArray());
+                        auto &color = colors->back();
+                        color.set(0.0, 1.0, 0.0);
+                        colors->dirty();
+
+                        osg::ref_ptr<osg::Vec3Array> points = dynamic_cast<osg::Vec3Array *>(geom->getVertexArray());
+
+
+                    }
+                }
+
+                std::string node_name = node->getName();
+                id = std::stoi(node_name);
+            }
+
+            if (is_dsm) //dsm node
+            {
+                ground_point = intersection.getWorldIntersectPoint();
+            }
+        }
+
+        std::cout << "id: " << id << "   ground_point: " << ground_point << std::endl;
+    }
+
+    Result result(id, ground_point, llh, build_area, 0, false);
+
+    return result;
 }

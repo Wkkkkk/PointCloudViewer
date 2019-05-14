@@ -26,9 +26,11 @@
 #include <osgGA/TerrainManipulator>
 #include <osgGA/TrackballManipulator>
 //Qt
+#include <QtCore/QTimer>
 #include <QtCore/QFileInfo>
 #include <QtWidgets/QOpenGLWidget>
 
+#include "Common.h"
 /**
  * @brief The OSGWidget class is the bridge between OSG and Qt.
  * It renders the whole osg scene
@@ -49,6 +51,14 @@ public:
     void init();
 
     void readDataFromFile(const QFileInfo &file_path);
+
+    void loadDSM(const std::string &file_path);
+
+    void loadBuildings(const std::string &file_path);
+
+    void activeTraceRefresh(bool is_active);
+
+    void activeTestRefresh(bool is_active);
 
     //!inherit from QOpenGLWidget
     virtual void keyPressEvent(QKeyEvent *event);
@@ -97,6 +107,12 @@ private:
     //! init some help node
     void initHelperNode();
 
+    void initTrace();
+
+    void beginTraceRefresh();
+
+    void finishTraceRefresh();
+
     //! create hud node
     osg::Camera *createHUD();
 
@@ -113,6 +129,8 @@ private:
     //! Getter of osg event queue
     osgGA::EventQueue *getEventQueue() const;
 
+    Result intersectionCheck();
+
     //! Ref of OSG Graphics Window
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> _graphicsWindow;
     //! Ref of OSG Viewer
@@ -121,8 +139,12 @@ private:
     osg::ref_ptr<osg::Switch> root_node_;
     osg::ref_ptr<osg::Switch> text_node_;
 
-    osg::Vec3d cur_position;
+    std::vector<osg::Vec3d> trace_vec_;
+    Point cur_position;
+    Array cur_points;
 
+    bool is_testing_;
+    QScopedPointer<QTimer> update_timer_;
     //! some manipulators
     osg::ref_ptr<osgGA::TrackballManipulator> _trackballMani;
     osg::ref_ptr<osgGA::TerrainManipulator> _terrainMani;
@@ -133,6 +155,8 @@ public slots:
 
     //! Center On, set to terrianManipulator if 0,0,0 input
     void trackballCenterOn(double x, double y, double z);
+
+    void updateScene();
 
     void updateUAVPose(osg::Vec3d);
 

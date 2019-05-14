@@ -10,12 +10,27 @@
     </message>
     <message>
         <location filename="../MainWindow.cpp"/>
+        <source>Load</source>
+        <translation>加载</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Receive</source>
+        <translation>接收</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Test</source>
+        <translation>测试</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
         <source>GPS-location</source>
         <translation>GPS位置</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp"/>
-        <source>statelite</source>
+        <source>satellite</source>
         <translation>卫星数</translation>
     </message>
     <message>

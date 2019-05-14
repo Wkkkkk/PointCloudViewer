@@ -16,7 +16,7 @@ add_custom_target(copy_ts
 
 add_custom_target(copy_model
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_CURRENT_SOURCE_DIR}/model/greenarrow.osgb ${COPY_OUTPUT_PATH}/model/greenarrow.osgb
+        ${CMAKE_CURRENT_SOURCE_DIR}/model/uav.osgb ${COPY_OUTPUT_PATH}/model/uav.osgb
         )
 
 add_custom_target(copy_fonts
@@ -36,5 +36,5 @@ endif ()
 add_executable(${APP_NAME} ${PLATFORM} ${SOURCES_CXX})
 add_dependencies(${APP_NAME} copy_ts copy_model copy_fonts copy_config)
 
-target_link_libraries(${APP_NAME} render core ${OPENSCENEGRAPH_LIBRARIES})
+target_link_libraries(${APP_NAME} render core ${OPENSCENEGRAPH_LIBRARIES} ${LIBSSH_LIBRARIES} ${libLAS_LIBRARIES})
 qt5_use_modules(${APP_NAME} Sql Gui Widgets OpenGL Network Concurrent)

@@ -1,10 +1,13 @@
   %YAML:1.0
 
-  #bag_path: /home/zhrobo/1544787797678722957
+  # defined by wk
   pointcloud_port: 9696
   statusinfo_port: 9697
+  dsm_file_path: ./data/output/dsm.ive
+  building_file_path: ./data/buildings/indexs.txt
   remote_server: 192.168.0.133
 
+  # defined by xf
   ip_address: 192.168.0.157
   usr_name: zhihui
   password: 123456

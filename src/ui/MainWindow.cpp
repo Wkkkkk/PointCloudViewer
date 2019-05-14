@@ -22,13 +22,18 @@
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QProgressDialog>
 #include <QtGui/QIcon>
 
+extern "C" {
+#include "SSH.h"
+}
 #include "Config.h"
 #include "Singleton.h"
 #include "OSGWidget.h"
 #include "MainWindow.h"
 #include "NetworkReceiver.h"
+#include "FileConvertThread.h"
 
 using namespace core;
 
@@ -51,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     createConnect();
 
     initUI();
+    initConfig();
 }
 
 MainWindow::~MainWindow() = default;
@@ -71,15 +77,53 @@ void MainWindow::open() {
 }
 
 void MainWindow::createMenu() {
+    connect_action = new QAction(tr("Connect"), this);
+    connect_action->setIcon(QIcon(":/images/connection.png"));
+    connect(connect_action, &QAction::triggered, this, &MainWindow::connectTriggered);
+
+    start_action = new QAction(tr("Start"), this);
+    start_action->setIcon(QIcon(":/images/start.png"));
+    connect(connect_action, &QAction::triggered, this, &MainWindow::startTriggered);
+
+    record_action = new QAction(tr("Record"), this);
+    record_action->setIcon(QIcon(":/images/file_open.png"));
+    connect(record_action, &QAction::triggered, this, &MainWindow::recordTriggered);
+
+    end_action = new QAction(tr("Stop"), this);
+    end_action->setIcon(QIcon(":/images/end.png"));
+    connect(end_action, &QAction::triggered, this, &MainWindow::endTriggered);
+
+    convert_action = new QAction(tr("Convert"), this);
+    convert_action->setIcon(QIcon(":/images/convert.png"));
+    connect(convert_action, &QAction::triggered, this, &MainWindow::convertTriggered);
+
     open_file_action_ = new QAction(tr("Open"), this);
     open_file_action_->setIcon(QIcon(":/images/file_open.png"));
     connect(open_file_action_, &QAction::triggered, this, &MainWindow::open);
+
+    open_dsm_action_ = new QAction(tr("Load"), this);
+    open_dsm_action_->setIcon(QIcon(":/images/terrian.png"));
+    connect(open_dsm_action_, &QAction::triggered, this, &MainWindow::loadFiles);
+
+    start_trace_action_ = new QAction(tr("Receive"), this);
+    start_trace_action_->setIcon(QIcon(":/images/plane.png"));
+    start_trace_action_->setCheckable(false);
+    connect(open_dsm_action_, &QAction::toggled, this, &MainWindow::activeTraceRefresh);
+
+    test_trace_action_ = new QAction(tr("Test"), this);
+    test_trace_action_->setIcon(QIcon(":/images/setup.png"));
+    test_trace_action_->setCheckable(true);
+    connect(test_trace_action_, &QAction::toggled, this, &MainWindow::activeTest);
 }
 
 void MainWindow::createToolBar() {
     QToolBar *toolBar = addToolBar("Tools");
 
-    toolBar->addAction(open_file_action_);
+    toolBar->addAction(open_dsm_action_);
+    toolBar->addSeparator();
+    toolBar->addAction(start_trace_action_);
+    toolBar->addSeparator();
+    toolBar->addAction(test_trace_action_);
     toolBar->addSeparator();
 }
 
@@ -98,7 +142,7 @@ void MainWindow::createDockWidget() {
 
     //卫星数
     {
-        QTreeWidgetItem *item = new QTreeWidgetItem(tree_widget_, QStringList(tr("statelite")));
+        QTreeWidgetItem *item = new QTreeWidgetItem(tree_widget_, QStringList(tr("satellite")));
         item->setExpanded(true);
     }
 
@@ -203,4 +247,102 @@ void MainWindow::updateLidarNormnal(bool is_valid) {
 
     auto check_state = is_valid ? Qt::CheckState::Checked : Qt::CheckState::Unchecked;
     item->setCheckState(0, check_state);
+}
+
+void MainWindow::loadFiles() {
+    auto dsm_file_path = Config::get<std::string>("dsm_file_path", "./data/output/dsm.ive");
+    auto building_file_path = Config::get<std::string>("building_file_path", "./data/buildings/indexs.txt");
+
+    osgwidget_->loadDSM(dsm_file_path);
+    osgwidget_->loadBuildings(building_file_path);
+}
+
+void MainWindow::activeTraceRefresh(bool is_active) {
+    osgwidget_->activeTraceRefresh(is_active);
+}
+
+void MainWindow::activeTest(bool is_active) {
+    osgwidget_->activeTestRefresh(is_active);
+}
+
+void MainWindow::initConfig() {
+    auto init = [&](std::string &parm, const std::string &name) {
+        parm = Config::get<std::string>(name);
+    };
+
+    init(ip_address_, "ip_address");
+    init(usr_name_, "usr_name");
+    init(password_, "password");
+    init(connect_cmd_, "connect_bash_file_path");
+    init(start_cmd_, "start_bash_file_path");
+    init(record_cmd_, "record_bash_file_path");
+    init(end_cmd_, "end_bash_file_path");
+}
+
+void MainWindow::connectTriggered() {
+    int result = execute_ssh_cmd(ip_address_.c_str(), usr_name_.c_str(), password_.c_str(), connect_cmd_.c_str());
+    if (result == 0) {
+        QMessageBox::information(nullptr, "Info", tr("Connect successfully"), QMessageBox::Yes);
+        start_action->setEnabled(true);
+    } else {
+        QMessageBox::information(nullptr, "Info", tr("Connect failed"), QMessageBox::Yes);
+    }
+}
+
+void MainWindow::startTriggered() {
+    //非阻塞
+    {
+        auto start_func = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
+                                    start_cmd_.c_str());
+
+        std::thread thread1(start_func);
+        thread1.detach();
+
+        start_action->setEnabled(false);
+        record_action->setEnabled(true);
+        end_action->setEnabled(true);
+    }
+}
+
+void MainWindow::recordTriggered() {
+    //非阻塞
+    {
+        auto f = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
+                           record_cmd_.c_str());
+
+        std::thread thread(f);
+        thread.detach();
+
+        record_action->setEnabled(false);
+    }
+}
+
+void MainWindow::endTriggered() {
+    int result = execute_ssh_cmd(ip_address_.c_str(), usr_name_.c_str(), password_.c_str(), end_cmd_.c_str());
+    if (result == 0) {
+        QMessageBox::information(nullptr, "Info", tr("Close successfully"), QMessageBox::Yes);
+        start_action->setEnabled(true);
+        record_action->setEnabled(false);
+        end_action->setEnabled(false);
+    }
+}
+
+void MainWindow::convertTriggered() {
+    QUrl dir_path = QFileDialog::getExistingDirectoryUrl(nullptr, tr("PointCould Import Directory"));
+    if (dir_path.isEmpty())
+        return;
+
+    auto dlg = new QProgressDialog;
+    dlg->setWindowTitle(tr("Convert"));
+    dlg->setLabelText(tr("Converting....."));
+    dlg->setCancelButton(0);
+    dlg->setRange(0, 0);  //always busy
+
+    FileConvertThread *workerThread = new FileConvertThread(dir_path.toLocalFile());
+    //connect(workerThread, &fileConvertThread::progress_value, dlg, &QProgressDialog::setValue);
+    connect(workerThread, &FileConvertThread::finished, workerThread, &QObject::deleteLater);
+    connect(workerThread, &FileConvertThread::finished, dlg, &QProgressDialog::close);
+    workerThread->start();
+
+    dlg->exec();
 }

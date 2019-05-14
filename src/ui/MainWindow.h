@@ -50,6 +50,8 @@ private:
      * @param none
      * */
     void initUI();
+
+    void initConfig();
     void createMenu();
     void createToolBar();
     void createDockWidget();
@@ -71,12 +73,29 @@ private:
         LIDAR
     };
 
-    //buttons
+    // basic buttons
+    QAction *connect_action;
+    QAction *start_action;
+    QAction *record_action;
+    QAction *end_action;
+    QAction *convert_action;
+
+    // advanced buttons
     QAction* open_file_action_;
+    QAction *open_dsm_action_;
+    QAction *start_trace_action_;
+    QAction *test_trace_action_;
 
     QScopedPointer<NetworkReceiver> pointcloud_manager_;
     QScopedPointer<NetworkReceiver> statusinfo_manager_;
 
+    std::string ip_address_;
+    std::string usr_name_;
+    std::string password_;
+    std::string connect_cmd_;
+    std::string start_cmd_;
+    std::string record_cmd_;
+    std::string end_cmd_;
 signals:
     void test_signal();
 
@@ -95,6 +114,21 @@ private slots:
 
     void updateLidarNormnal(bool);
 
+    void connectTriggered();
+
+    void startTriggered();
+
+    void recordTriggered();
+
+    void endTriggered();
+
+    void convertTriggered();
+
+    void loadFiles();
+
+    void activeTraceRefresh(bool is_active);
+
+    void activeTest(bool is_active);
 };
 
 #endif //SPACECLOUD_MAINWINDOW_H

@@ -29,6 +29,18 @@
 typedef osg::Vec3d Point;
 typedef std::vector<osg::Vec3d> Array;
 
+struct Result {
+    int build_id;
+    Point center;
+    Point plane_llh;
+    double build_area;
+    double change_area;
+    bool is_illegal;
+
+    Result(int id, Point c, Point llh, double b_a, double c_a, bool legal) :
+            build_id(id), center(c), plane_llh(llh), build_area(b_a), change_area(c_a), is_illegal(legal) {}
+};
+
 const char root_node_name[] = "root_node";
 const char point_cloud_node_name[] = "point_cloud_node";
 const char uav_node_name[] = "uav_node";
@@ -37,6 +49,12 @@ const char hud_node_name[] = "hud_node";
 const char text_node_name[] = "text_node";
 const char positon_geode_name[] = "positon_geode";
 const char helper_node_name[] = "helper_node";
+
+const char dsm_node_name[] = "dsm_node";
+const char building_node_name[] = "building_node";
+const char model_node_name[] = "model_node";
+const char building_trans_node_name[] = "building_trans_node";
+const char plane_trans_node_name[] = "plane_trans_node";
 
 inline std::ostream &operator<<( std::ostream &output, const osg::Vec3d &p )
 {

@@ -53,7 +53,6 @@ typedef struct GpsMsgs {
 /////////////////////////////////////////////////////
 
 #pragma pack(1)
-float scale = 1e-8;
 typedef struct RawIMUFrame {
     double GPSTime;
     int GyroX;
