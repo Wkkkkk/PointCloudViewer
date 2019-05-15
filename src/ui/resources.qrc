@@ -20,7 +20,6 @@
         <file>images/building.png</file>
         <file>images/plane.png</file>
         <file>images/satellite.png</file>
-        <file>images/setup.png</file>
         <file>images/terrian.png</file>
         <file>images/test.png</file>
     </qresource>

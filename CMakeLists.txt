@@ -29,7 +29,6 @@ find_package(Draco REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(libssh REQUIRED)
-find_package(LASTools REQUIRED)
 
 message(STATUS "libssh:${LIBSSH_LIBRARIES}")
 
@@ -38,6 +37,8 @@ include_directories(
         ${OPENSCENEGRAPH_INCLUDE_DIRS}
         ${YAML_CPP_INCLUDE_DIR}
         ${EIGEN3_INCLUDE_DIR}
+        thirdparty/LAStools/LASlib/inc
+        thirdparty/LAStools/LASzip/src
 )
 
 link_directories(
@@ -46,3 +47,4 @@ link_directories(
 )
 
 add_subdirectory(src)
+add_subdirectory(thirdparty/LAStools)

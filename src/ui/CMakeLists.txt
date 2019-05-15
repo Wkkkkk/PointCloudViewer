@@ -37,7 +37,7 @@ if (UNIX)
 endif ()
 
 add_executable(${APP_NAME} ${PLATFORM} ${SOURCES_CXX})
-add_dependencies(${APP_NAME} copy_ts copy_model copy_fonts copy_config LASTools)
+add_dependencies(${APP_NAME} copy_ts copy_model copy_fonts copy_config)
 
 target_link_libraries(${APP_NAME} render core ${OPENSCENEGRAPH_LIBRARIES} ${LIBSSH_LIBRARIES}
         ${PTHREAD} ${Boost_LIBRARIES} LASlib)
