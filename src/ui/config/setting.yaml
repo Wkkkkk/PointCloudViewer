@@ -1,31 +1,31 @@
-  %YAML:1.0
+%YAML:1.0
 
-  # server config
-  plane_id: 1
-  video_url: rtmp://58.200.131.2:1935/livetv/gxtv
-  pointcloud_port: 9696
-  statusinfo_port: 9697
-  dsm_file_path: ./data/output/dsm.ive
-  building_file_path: ./data/buildings/indexs.txt
-  remote_public_server_ip: 192.168.0.254
-  remote_public_server_port: 9123
+# server config
+plane_id: 1
+video_url: rtmp://58.200.131.2:1935/livetv/gxtv
+pointcloud_port: 9696
+statusinfo_port: 9697
+dsm_file_path: ./data/output/dsm.ive
+building_file_path: ./data/buildings/indexs.txt
+remote_public_server_ip: 192.168.0.254
+remote_public_server_port: 9123
 
-  # airplane config
-  ip_address: 192.168.0.153
-  usr_name: zhihui
-  password: 123456
-  connect_bash_file_path: ls
-  start_bash_file_path: ~/start.sh
-  end_bash_file_path: ~/end.sh
+# airplane config
+ip_address: 192.168.0.153
+usr_name: zhihui
+password: 123456
+connect_bash_file_path: ls
+start_bash_file_path: ~/start.sh
+end_bash_file_path: ~/end.sh
 
-  points_file: /points.bin
-  pose_file: /pose.txt
-  cloud_out: /outcloud.las
-  lidar_yaw: 0
-  lidar_pitch: 90
-  lidar_roll: 0
-  lidar_x: -0.5
-  lidar_y: 0
-  lidar_z: 0.02571
-  lidar_delay: 30
-  lidar_period: 80
+points_file: /points.bin
+pose_file: /pose.txt
+cloud_out: /outcloud.las
+lidar_yaw: 0
+lidar_pitch: 90
+lidar_roll: 0
+lidar_x: -0.5
+lidar_y: 0
+lidar_z: 0.02571
+lidar_delay: 30
+lidar_period: 80
