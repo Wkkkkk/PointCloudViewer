@@ -4,6 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin")
 set(COPY_OUTPUT_PATH ${EXECUTABLE_OUTPUT_PATH})
+set(EXTERNAL_INSTALL_LOCATION ${PROJECT_SOURCE_DIR}/external)
 set(CMAKE_CXX_FLAGS "-DBOOST_ALL_DYN_LINK")
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-DBUILD_FOR_BUILDING_DETECT)
@@ -17,7 +18,6 @@ ENDIF ()
 
 #find 3rdparty
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-
 find_package(Qt5LinguistTools)
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5Core CONFIG REQUIRED)
@@ -29,6 +29,7 @@ find_package(Draco REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(libssh REQUIRED)
+find_package(LASTools REQUIRED)
 
 message(STATUS "libssh:${LIBSSH_LIBRARIES}")
 
@@ -37,8 +38,6 @@ include_directories(
         ${OPENSCENEGRAPH_INCLUDE_DIRS}
         ${YAML_CPP_INCLUDE_DIR}
         ${EIGEN3_INCLUDE_DIR}
-        3rdparty/LAStools/LASlib/inc
-        3rdparty/LAStools/LASzip/src
 )
 
 link_directories(
@@ -47,4 +46,3 @@ link_directories(
 )
 
 add_subdirectory(src)
-add_subdirectory(3rdparty/LAStools)
