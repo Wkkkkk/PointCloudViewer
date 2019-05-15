@@ -1,12 +1,14 @@
   %YAML:1.0
 
   # server config
+  plane_id: 1
+  video_url: rtmp://58.200.131.2:1935/livetv/gxtv
   pointcloud_port: 9696
   statusinfo_port: 9697
   dsm_file_path: ./data/output/dsm.ive
   building_file_path: ./data/buildings/indexs.txt
-  remote_public_server_ip: 192.168.0.133
-  remote_public_server_port: 9999
+  remote_public_server_ip: 192.168.0.254
+  remote_public_server_port: 9123
 
   # airplane config
   ip_address: 192.168.0.153

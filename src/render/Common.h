@@ -30,15 +30,18 @@ typedef osg::Vec3d Point;
 typedef std::vector<osg::Vec3d> Array;
 
 struct Result {
+    int plane_id;
     int build_id;
     Point center;
     Point plane_llh;
     double build_area;
-    double change_area;
+    double change_rate;
     bool is_illegal;
+    std::string video_url;
 
-    Result(int id, Point c, Point llh, double b_a, double c_a, bool legal) :
-            build_id(id), center(c), plane_llh(llh), build_area(b_a), change_area(c_a), is_illegal(legal) {}
+    Result(int i, int id, Point c, Point llh, double b_a, double c_a, bool legal, std::string url) :
+            plane_id(i), build_id(id), center(c), plane_llh(llh),
+            build_area(b_a), change_rate(c_a), is_illegal(legal), video_url(std::move(url)) {}
 };
 
 const char root_node_name[] = "root_node";

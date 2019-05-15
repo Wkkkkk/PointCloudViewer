@@ -28,6 +28,7 @@
 //Qt
 #include <QtCore/QTimer>
 #include <QtCore/QFileInfo>
+#include <QtNetwork/QUdpSocket>
 #include <QtWidgets/QOpenGLWidget>
 
 #include "Common.h"
@@ -131,6 +132,10 @@ private:
 
     Result intersectionCheck();
 
+    void postResult(const Result &);
+
+    void pointCloudMatch(Result &);
+
     //! Ref of OSG Graphics Window
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> _graphicsWindow;
     //! Ref of OSG Viewer
@@ -145,6 +150,8 @@ private:
 
     bool is_testing_;
     QScopedPointer<QTimer> update_timer_;
+    QScopedPointer<QUdpSocket> udp_socket_;
+
     //! some manipulators
     osg::ref_ptr<osgGA::TrackballManipulator> _trackballMani;
     osg::ref_ptr<osgGA::TerrainManipulator> _terrainMani;

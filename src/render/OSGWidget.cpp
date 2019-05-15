@@ -19,10 +19,18 @@
 
 #include <stdio.h>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/date_time.hpp>
+#include <boost/variant.hpp>
+
 #include <QtGui/QKeyEvent>
 #include <QtGui/QPainter>
+#include <QtCore/QDebug>
 #include <QtCore/QFile>
 #include <QtCore/QTextStream>
+#include <QtCore/QJsonObject>
+#include <QtCore/QJsonDocument>
 
 #include <osg/Timer>
 #include <osg/Geometry>
@@ -39,6 +47,7 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgDB/ReadFile>
 
+#include "Config.h"
 #include "OSGWidget.h"
 #include "Singleton.h"
 #include "NodeCallback.h"
@@ -62,10 +71,12 @@ OSGWidget::OSGWidget(QWidget *parent, Qt::WindowFlags f)
           root_node_(nullptr),
           text_node_(nullptr),
           is_testing_(true),
-          update_timer_(new QTimer(this)) {
+          update_timer_(new QTimer(this)),
+          udp_socket_(new QUdpSocket(this)) {
     // enable keypress event
     this->setFocusPolicy(Qt::StrongFocus);
 
+    update_timer_->setInterval(200);
     connect(update_timer_.data(), &QTimer::timeout, this, &OSGWidget::updateScene);
 }
 
@@ -522,34 +533,9 @@ void OSGWidget::updateUAVPose(Point position) {
             NodeTreeSearch::findNodeWithName(root_node_, uav_node_name));
 
     cur_position = position;
-    uav_node->setPosition(position);
-
-    std::stringstream ss;
-    ss << position;
-    std::string position_str = ss.str();
-
-    //update text
+    // update model
     {
-        text_node_->removeChildren(0, text_node_->getNumChildren());
-
-        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-        geode->setName(positon_geode_name);
-        // turn lighting off for the text and disable depth test to ensure it's always on top.
-        osg::ref_ptr<osg::StateSet> state_set = geode->getOrCreateStateSet();
-        state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-
-        //position
-        {
-            osg::Vec3 loc(20.0f, 20.0f, 0.0f);
-
-            osg::ref_ptr<osgText::Text> text = new osgText::Text;
-            geode->addDrawable(text);
-
-            text->setPosition(loc);
-            text->setCharacterSize(20);
-            text->setText("UAV Pos: " + position_str);
-        }
-        text_node_->addChild(geode);
+        uav_node->setPosition(cur_position);
     }
 }
 
@@ -619,7 +605,7 @@ void OSGWidget::initTrace() {
     trace_vec_.emplace_back(202128, 2502150, height);
 
     std::vector<osg::Vec3d> intense_trace;
-    int inter = 50;
+    int inter = 2;
 
     for (int i = 0; i < trace_vec_.size() - 1; ++i) {
         osg::Vec3d p1 = trace_vec_[i];
@@ -738,7 +724,7 @@ void OSGWidget::beginTraceRefresh() {
     //for setViewMatrixAsLookAt() to work
     _viewer->setCameraManipulator(nullptr);
 
-    update_timer_->start(30);
+    update_timer_->start();
 }
 
 void OSGWidget::finishTraceRefresh() {
@@ -749,25 +735,70 @@ void OSGWidget::finishTraceRefresh() {
 }
 
 void OSGWidget::updateScene() {
+    std::cout << "---------------updateScene---------------" << std::endl;
 
-    // tips
+    // update position
+    if (is_testing_)
     {
+        static int i = 0;
+        {
+            if (i >= trace_vec_.size()) i = 0;
+            cur_position = trace_vec_[i++];
+        }
         std::cout << "cur_position: " << cur_position << " point num: " << cur_points.size() << std::endl;
     }
+
+    // Set the camera to look from its current position to the plane position
+    _viewer->getCamera()->setViewMatrixAsLookAt(cur_position + osg::Vec3d(0, 0, 700), cur_position,
+                                                osg::Vec3d(0, 1.0, 0));
 
     //calculate intersection for current dsm height and building id
     Result result = intersectionCheck();
 
     //match the point cloud data
-//    pointCloudMatch(result);
+    pointCloudMatch(result);
 
-//    postResult(result);
+    postResult(result);
 }
 
 Result OSGWidget::intersectionCheck() {
-    static osg::ref_ptr<osg::Switch> model_node =
-            dynamic_cast<osg::Switch *>(NodeTreeSearch::findNodeWithName(root_node_, model_node_name));
+    static osg::ref_ptr<osg::PositionAttitudeTransform> model_node =
+            dynamic_cast<osg::PositionAttitudeTransform *>(NodeTreeSearch::findNodeWithName(root_node_, uav_node_name));
 
+    // update model
+    {
+        model_node->setPosition(cur_position);
+    }
+
+    //update text
+    {
+        std::stringstream ss;
+        ss << cur_position;
+        std::string position_str = ss.str();
+
+        text_node_->removeChildren(0, text_node_->getNumChildren());
+
+        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+        geode->setName(positon_geode_name);
+        // turn lighting off for the text and disable depth test to ensure it's always on top.
+        osg::ref_ptr<osg::StateSet> state_set = geode->getOrCreateStateSet();
+        state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+        //position
+        {
+            osg::Vec3 loc(20.0f, 20.0f, 0.0f);
+
+            osg::ref_ptr<osgText::Text> text = new osgText::Text;
+            geode->addDrawable(text);
+
+            text->setPosition(loc);
+            text->setCharacterSize(20);
+            text->setText("UAV Pos: " + position_str);
+        }
+        text_node_->addChild(geode);
+    }
+
+    // intesection check
     osg::Vec3d start = cur_position;
     start.z() += 1000;
     osg::Vec3d end = cur_position;
@@ -777,7 +808,6 @@ Result OSGWidget::intersectionCheck() {
     double build_area = 0;
     osg::Vec3d ground_point = cur_position;
     ground_point.z() = 0;
-
     osg::Vec3d llh = utm2llh(cur_position);
 
     osg::ref_ptr<osgUtil::LineSegmentIntersector> intersector = new osgUtil::LineSegmentIntersector(start, end);
@@ -816,9 +846,18 @@ Result OSGWidget::intersectionCheck() {
                         color.set(0.0, 1.0, 0.0);
                         colors->dirty();
 
-                        osg::ref_ptr<osg::Vec3Array> points = dynamic_cast<osg::Vec3Array *>(geom->getVertexArray());
+                        // calculate area
+                        osg::ref_ptr<osg::Vec3Array> vertex = dynamic_cast<osg::Vec3Array *>(geom->getVertexArray());
+                        double area = 0.0;
+                        int point_num = vertex->size();
+                        for (int i = 0; i < point_num; ++i) {
+                            int j = (i + 1) % point_num;
+                            osg::Vec3d p1 = vertex->at(i);
+                            osg::Vec3d p2 = vertex->at(j);
 
-
+                            area += 0.5 * (p1.x() * p2.y() - p2.x() * p1.y());
+                        }
+                        build_area = area;
                     }
                 }
 
@@ -832,10 +871,102 @@ Result OSGWidget::intersectionCheck() {
             }
         }
 
-        std::cout << "id: " << id << "   ground_point: " << ground_point << std::endl;
+        std::cout << "id: " << id << "   ground_height: " << ground_point.z() << std::endl;
     }
 
-    Result result(id, ground_point, llh, build_area, 0, false);
+    static auto plane_id = Config::get<int>("plane_id", 1);
+    static auto url = Config::get<std::string>("video_url", "rtmp://58.200.131.2:1935/livetv/gxtv");
+    bool default_legal = id >= 0;
+
+    Result result(plane_id, id, utm2llh(ground_point), llh, build_area, 0, default_legal, url);
 
     return result;
+}
+
+void OSGWidget::pointCloudMatch(Result &result) {
+    Array &points = cur_points;
+    if (points.empty()) return;
+
+    const osg::Vec3d &center_point = cur_position;
+    std::vector<double> point_cost;
+
+    //weight function
+    auto cost = [](double d) -> double {
+        if (d <= 10) return 1;
+        else return 10.0 / d;
+    };
+
+    for (const auto &point : points) {
+        osg::Vec3d distance = point - center_point;
+        distance.z() = 0;
+        double d = distance.length();
+        point_cost.push_back(cost(d));
+    }
+
+    //calculate weighted mean height
+    double cost_sum = std::accumulate(point_cost.begin(), point_cost.end(), 0.0);
+    double sum = 0;
+    for (int i = 0; i < points.size(); ++i) {
+        sum += point_cost[i] * fabs(points[i].z());
+    }
+    sum /= cost_sum;
+    double mean_height = sum;
+
+    int building_id = result.build_id;
+    double dsm_height = result.center.z();
+    double difference = fabs(mean_height - dsm_height);
+    std::cout << "mean_height: " << mean_height << " dsm_height: " << dsm_height << " dif: " << difference << std::endl;
+
+    if (difference < 10) {
+        result.is_illegal = false;
+    } else {
+        qDebug() << "building:" << building_id << "area" << result.build_area << "dif:" << difference;
+    }
+}
+
+QByteArray resultToJson(const Result &result) {
+    std::string time_str;
+    {
+        boost::posix_time::ptime timeLocal = boost::posix_time::second_clock::local_time();
+        time_str = boost::posix_time::to_simple_string(timeLocal);
+    }
+
+    QJsonObject json;
+    json.insert("plane_id", result.plane_id);
+    json.insert("build_id", result.build_id);
+    json.insert("build_area", result.build_area);
+    json.insert("change_rate", result.change_rate);
+    json.insert("is_illegal", result.is_illegal);
+    json.insert("time", QString::fromStdString(time_str));
+    json.insert("url", QString::fromStdString(result.video_url));
+
+    QJsonObject center_item;
+    center_item.insert("x", result.center.x());
+    center_item.insert("y", result.center.y());
+    center_item.insert("z", result.center.z());
+    json.insert("build_center", center_item);
+
+    QJsonObject location_item;
+    location_item.insert("x", result.plane_llh.x());
+    location_item.insert("y", result.plane_llh.y());
+    location_item.insert("z", result.plane_llh.z());
+    json.insert("plane_loc", location_item);
+
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray byte_array = document.toJson(QJsonDocument::Compact);
+
+    return byte_array;
+}
+
+void OSGWidget::postResult(const Result &result) {
+    static auto server_ip = Config::get<std::string>("remote_public_server_ip", "127.0.0.1");
+    static auto server_port = Config::get<int>("remote_public_server_port", 9123);
+
+    QByteArray datagram = resultToJson(result);
+
+    QHostAddress host_address(server_ip.c_str());
+    QString host_address_str = host_address.toString();
+    qDebug() << "server address: " << host_address_str << ":" << server_port;
+    udp_socket_->writeDatagram(datagram.data(), datagram.size(), host_address, server_port);
 }
