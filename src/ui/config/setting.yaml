@@ -1,14 +1,15 @@
   %YAML:1.0
 
-  # defined by wk
+  # server config
   pointcloud_port: 9696
   statusinfo_port: 9697
   dsm_file_path: ./data/output/dsm.ive
   building_file_path: ./data/buildings/indexs.txt
-  remote_server: 192.168.0.133
+  remote_public_server_ip: 192.168.0.133
+  remote_public_server_port: 9999
 
-  # defined by xf
-  ip_address: 192.168.0.157
+  # airplane config
+  ip_address: 192.168.0.153
   usr_name: zhihui
   password: 123456
   connect_bash_file_path: ls

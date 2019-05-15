@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
         pointcloud_manager_(new NetworkReceiver("PointCloud Receiver", NetworkReceiver::MODE::POINTCLOUD)),
         statusinfo_manager_(new NetworkReceiver("StatusInfo Receiver", NetworkReceiver::MODE::STATUSINFO)) {
 
-    this->setWindowTitle("Protype");
+    this->setWindowTitle("Lidar receiver");
 
     osgwidget_ = new OSGWidget(this);
     this->setCentralWidget(osgwidget_);
@@ -77,25 +77,25 @@ void MainWindow::open() {
 }
 
 void MainWindow::createMenu() {
-    connect_action = new QAction(tr("Connect"), this);
-    connect_action->setIcon(QIcon(":/images/connection.png"));
-    connect(connect_action, &QAction::triggered, this, &MainWindow::connectTriggered);
+    connect_action_ = new QAction(tr("Connect"), this);
+    connect_action_->setIcon(QIcon(":/images/connection.png"));
+    connect(connect_action_, &QAction::triggered, this, &MainWindow::connectTriggered);
 
-    start_action = new QAction(tr("Start"), this);
-    start_action->setIcon(QIcon(":/images/start.png"));
-    connect(connect_action, &QAction::triggered, this, &MainWindow::startTriggered);
+    start_action_ = new QAction(tr("Start"), this);
+    start_action_->setIcon(QIcon(":/images/start.png"));
+    connect(start_action_, &QAction::triggered, this, &MainWindow::startTriggered);
 
-    record_action = new QAction(tr("Record"), this);
-    record_action->setIcon(QIcon(":/images/file_open.png"));
-    connect(record_action, &QAction::triggered, this, &MainWindow::recordTriggered);
+    record_action_ = new QAction(tr("Record"), this);
+    record_action_->setIcon(QIcon(":/images/record.png"));
+    connect(record_action_, &QAction::triggered, this, &MainWindow::recordTriggered);
 
-    end_action = new QAction(tr("Stop"), this);
-    end_action->setIcon(QIcon(":/images/end.png"));
-    connect(end_action, &QAction::triggered, this, &MainWindow::endTriggered);
+    end_action_ = new QAction(tr("Stop"), this);
+    end_action_->setIcon(QIcon(":/images/end.png"));
+    connect(end_action_, &QAction::triggered, this, &MainWindow::endTriggered);
 
-    convert_action = new QAction(tr("Convert"), this);
-    convert_action->setIcon(QIcon(":/images/convert.png"));
-    connect(convert_action, &QAction::triggered, this, &MainWindow::convertTriggered);
+    convert_action_ = new QAction(tr("Convert"), this);
+    convert_action_->setIcon(QIcon(":/images/convert.png"));
+    connect(convert_action_, &QAction::triggered, this, &MainWindow::convertTriggered);
 
     open_file_action_ = new QAction(tr("Open"), this);
     open_file_action_->setIcon(QIcon(":/images/file_open.png"));
@@ -114,17 +114,31 @@ void MainWindow::createMenu() {
     test_trace_action_->setIcon(QIcon(":/images/setup.png"));
     test_trace_action_->setCheckable(true);
     connect(test_trace_action_, &QAction::toggled, this, &MainWindow::activeTest);
+
+    enableButtons(false);
+}
+
+void MainWindow::enableButtons(bool enable) {
+    start_action_->setEnabled(enable);
+    record_action_->setEnabled(enable);
+    end_action_->setEnabled(enable);
 }
 
 void MainWindow::createToolBar() {
     QToolBar *toolBar = addToolBar("Tools");
 
+    toolBar->addAction(connect_action_);
+    toolBar->addAction(start_action_);
+    toolBar->addAction(record_action_);
+    toolBar->addAction(end_action_);
+    toolBar->addAction(convert_action_);
+    toolBar->addSeparator();
+
+#ifdef BUILD_FOR_BUILDING_DETECT
     toolBar->addAction(open_dsm_action_);
-    toolBar->addSeparator();
     toolBar->addAction(start_trace_action_);
-    toolBar->addSeparator();
     toolBar->addAction(test_trace_action_);
-    toolBar->addSeparator();
+#endif
 }
 
 void MainWindow::createDockWidget() {
@@ -282,48 +296,45 @@ void MainWindow::initConfig() {
 void MainWindow::connectTriggered() {
     int result = execute_ssh_cmd(ip_address_.c_str(), usr_name_.c_str(), password_.c_str(), connect_cmd_.c_str());
     if (result == 0) {
-        QMessageBox::information(nullptr, "Info", tr("Connect successfully"), QMessageBox::Yes);
-        start_action->setEnabled(true);
+        QMessageBox::information(nullptr, tr("Info"), tr("Connect successfully"), QMessageBox::Yes);
+
+        start_action_->setEnabled(true);
     } else {
-        QMessageBox::information(nullptr, "Info", tr("Connect failed"), QMessageBox::Yes);
+        QMessageBox::information(nullptr, tr("Info"), tr("Connect failed"), QMessageBox::Yes);
     }
 }
 
 void MainWindow::startTriggered() {
     //非阻塞
-    {
-        auto start_func = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
-                                    start_cmd_.c_str());
+    auto start_func = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
+                                start_cmd_.c_str());
 
-        std::thread thread1(start_func);
-        thread1.detach();
+    std::thread thread1(start_func);
+    thread1.detach();
 
-        start_action->setEnabled(false);
-        record_action->setEnabled(true);
-        end_action->setEnabled(true);
-    }
+    start_action_->setEnabled(false);
+    record_action_->setEnabled(true);
+    end_action_->setEnabled(true);
 }
 
 void MainWindow::recordTriggered() {
     //非阻塞
-    {
-        auto f = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
-                           record_cmd_.c_str());
+    auto f = std::bind(&execute_ssh_cmd, ip_address_.c_str(), usr_name_.c_str(), password_.c_str(),
+                       record_cmd_.c_str());
 
-        std::thread thread(f);
-        thread.detach();
+    std::thread thread(f);
+    thread.detach();
 
-        record_action->setEnabled(false);
-    }
+    record_action_->setEnabled(false);
 }
 
 void MainWindow::endTriggered() {
     int result = execute_ssh_cmd(ip_address_.c_str(), usr_name_.c_str(), password_.c_str(), end_cmd_.c_str());
     if (result == 0) {
-        QMessageBox::information(nullptr, "Info", tr("Close successfully"), QMessageBox::Yes);
-        start_action->setEnabled(true);
-        record_action->setEnabled(false);
-        end_action->setEnabled(false);
+        QMessageBox::information(nullptr, tr("Info"), tr("Close successfully"), QMessageBox::Yes);
+        start_action_->setEnabled(true);
+        record_action_->setEnabled(false);
+        end_action_->setEnabled(false);
     }
 }
 
@@ -335,7 +346,7 @@ void MainWindow::convertTriggered() {
     auto dlg = new QProgressDialog;
     dlg->setWindowTitle(tr("Convert"));
     dlg->setLabelText(tr("Converting....."));
-    dlg->setCancelButton(0);
+    dlg->setCancelButton(nullptr);
     dlg->setRange(0, 0);  //always busy
 
     FileConvertThread *workerThread = new FileConvertThread(dir_path.toLocalFile());

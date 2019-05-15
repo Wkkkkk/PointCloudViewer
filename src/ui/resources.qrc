@@ -4,6 +4,10 @@
         <file>images/file_open.png</file>
         <file>images/file_save.png</file>
         <file>images/file.png</file>
+        <file>images/start.png</file>
+        <file>images/end.png</file>
+        <file>images/convert.png</file>
+        <file>images/connection.png</file>
         <file>images/print.png</file>
         <file>images/setup.png</file>
         <file>images/lock.png</file>
@@ -12,7 +16,7 @@
         <file>images/cancel.png</file>
         <file>images/tree.png</file>
         <file>images/subjectgeographic.png</file>
-        <file>images/geographical-position.png</file>
+        <file>images/record.png</file>
         <file>images/building.png</file>
         <file>images/plane.png</file>
         <file>images/satellite.png</file>

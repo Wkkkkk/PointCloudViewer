@@ -4,7 +4,7 @@
 #include "FileConvertThread.h"
 #include "PointcloudConvert.h"
 
-FileConvertThread::FileConvertThread(QString file_dir_path) :
+FileConvertThread::FileConvertThread(const QString &file_dir_path) :
         file_dir_path_(file_dir_path) {
 
 }

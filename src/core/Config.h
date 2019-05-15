@@ -37,7 +37,7 @@ public:
     }
 
     static void setParameterFile(const std::string &filename) {
-        auto config = Config::getInstance();
+        auto &config = Config::getInstance();
         config.node_ = YAML::LoadFile(filename);
         config.filepath_ = filename;
         if (config.node_.IsNull()) {
@@ -48,24 +48,24 @@ public:
 
     template<typename T>
     static T get(const std::string &key) {
-        auto config = Config::getInstance();
+        auto &config = Config::getInstance();
         auto result = config.node_[key];
         if (result.IsDefined()) {
             auto value = result.as<T>();
             std::cout << key << " is set to: " << value << std::endl;
             return value;
         } else {
+            std::cerr << key << " is lost." << std::endl;
             return T();
         }
     }
 
     template<typename T>
     static T get(const std::string &key, const T defaultVal) {
-        auto config = Config::getInstance();
+        auto &config = Config::getInstance();
         auto result = config.node_[key];
         if (result.IsDefined()) {
             auto value = result.as<T>();
-            std::cout << key << " is " << value << std::endl;
             return value;
         } else {
             return defaultVal;
@@ -74,7 +74,7 @@ public:
 
     template<typename T>
     static std::vector<T> getlist(const std::string &key) {
-        auto config = Config::getInstance();
+        auto &config = Config::getInstance();
         auto node = config.node_[key];
         static std::vector<T> collect;
         if (node.IsDefined()) {
@@ -86,7 +86,7 @@ public:
     }
 
     static std::string getConfigFilePath() {
-        auto config = Config::getInstance();
+        auto &config = Config::getInstance();
         return config.filepath_;
     }
 

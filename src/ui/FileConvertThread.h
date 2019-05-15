@@ -17,12 +17,23 @@
  * limitations under the License.
 */
 
-#ifndef POINTCLOUDVIEWER_POINTCLOUD_EXPPLORE_H
-#define POINTCLOUDVIEWER_POINTCLOUD_EXPPLORE_H
+#ifndef PROTYPE_FILECONVERT_H
+#define PROTYPE_FILECONVERT_H
 
-#include <string>
-#include <functional>
+#include <QtCore/QThread>
 
-void ConvertToLas(const std::string &bag_path, std::function<void(void)> callback);
+class FileConvertThread : public QThread {
+Q_OBJECT
+public:
+    explicit FileConvertThread(const QString &file_dir_path);
 
-#endif //POINTCLOUDVIEWER_POINTCLOUD_EXPPLORE_H
+    void run() override;
+
+private:
+    QString file_dir_path_;
+signals:
+
+    void progress_value(int);
+};
+
+#endif //PROTYPE_FILECONVERT_H

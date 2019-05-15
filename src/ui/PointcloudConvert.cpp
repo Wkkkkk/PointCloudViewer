@@ -2,10 +2,8 @@
 #include <fstream>
 #include <iostream>
 
-#ifdef _MSC_VER
 #include <lasreader.hpp>
 #include <laswriter.hpp>
-#endif
 
 #include "Config.h"
 #include "GPSMsg.h"
@@ -91,8 +89,6 @@ Eigen::Vector3d transformPoint(Eigen::Vector3d point, POSSMeas::Ptr pose) {
 void
 writeLasFromPointCloud(const char *strInPointsName, const char *strOutLasName, uint64_t time_min, uint64_t time_max,
                        double min_distance, uint64_t lidar_time_offset, const std::vector<int> &id_range) {
-    /*
-
 	LASreadOpener lasreadopener;
 	lasreadopener.set_file_name(strInPointsName);
 	if (lasreadopener.active()) {
@@ -178,7 +174,6 @@ writeLasFromPointCloud(const char *strInPointsName, const char *strOutLasName, u
 		delete laswriter;
 
 	}
-     */
 }
 
 void ConvertToLas(const std::string &bag_path, std::function<void(void)> callback) {
@@ -231,6 +226,4 @@ void ConvertToLas(const std::string &bag_path, std::function<void(void)> callbac
     uint64_t time_max = time_min + (uint64_t) (lidar_period * 1e9);
     writeLasFromPointCloud(points_file.c_str(), out_file.c_str(), time_min, time_max, min_distance, lidar_time_offset,
                            line_id_vec);
-
-    callback();
 }

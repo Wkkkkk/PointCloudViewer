@@ -32,9 +32,12 @@ add_custom_target(copy_config
 if (WIN32)
     set(PLATFORM WIN32)
 endif ()
+if (UNIX)
+    set(PTHREAD pthread)
+endif ()
 
 add_executable(${APP_NAME} ${PLATFORM} ${SOURCES_CXX})
 add_dependencies(${APP_NAME} copy_ts copy_model copy_fonts copy_config)
 
-target_link_libraries(${APP_NAME} render core ${OPENSCENEGRAPH_LIBRARIES} ${LIBSSH_LIBRARIES} ${libLAS_LIBRARIES})
+target_link_libraries(${APP_NAME} render core ${OPENSCENEGRAPH_LIBRARIES} ${LIBSSH_LIBRARIES} ${PTHREAD} LASlib)
 qt5_use_modules(${APP_NAME} Sql Gui Widgets OpenGL Network Concurrent)

@@ -58,6 +58,8 @@ private:
 
     void createConnect();
 
+    void enableButtons(bool enable);
+
     //core widget
     OSGWidget*      osgwidget_;
 
@@ -74,14 +76,14 @@ private:
     };
 
     // basic buttons
-    QAction *connect_action;
-    QAction *start_action;
-    QAction *record_action;
-    QAction *end_action;
-    QAction *convert_action;
+    QAction *connect_action_;
+    QAction *start_action_;
+    QAction *record_action_;
+    QAction *end_action_;
+    QAction *convert_action_;
 
     // advanced buttons
-    QAction* open_file_action_;
+    QAction *open_file_action_;
     QAction *open_dsm_action_;
     QAction *start_trace_action_;
     QAction *test_trace_action_;

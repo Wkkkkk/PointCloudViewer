@@ -650,7 +650,7 @@ void OSGWidget::loadDSM(const std::string &file_path) {
     osg::ref_ptr<osg::Node> dsm = osgDB::readNodeFile(file_path);
 
     if (!dsm.valid()) {
-        std::cout << "failed to load dsm file: " << file_path << std::endl;
+        std::cerr << "failed to load dsm file: " << file_path << std::endl;
         return;
     }
 
@@ -673,7 +673,10 @@ void OSGWidget::loadBuildings(const std::string &file_path) {
 
     QString file_path_str = QString::fromStdString(file_path);
     QFile file(file_path_str);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        std::cerr << "failed to load building files: " << file_path << std::endl;
+        return;
+    }
 
     QFileInfo fileInfo(file_path_str);
     if (!fileInfo.exists()) return;

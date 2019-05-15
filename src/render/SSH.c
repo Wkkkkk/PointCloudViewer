@@ -73,7 +73,10 @@ int excute_remote_cmd(ssh_session session, const char *cmd) {
 
 int execute_ssh_cmd(const char *ip_address, const char *usr_name,
                     const char *password, const char *cmd) {
-    printf("execute cmd:%s\n", cmd);
+    printf("connect :%s\n", ip_address);
+    printf("user    :%s\n", usr_name);
+    printf("password:%s\n", password);
+    printf("cmd     :%s\n", cmd);
 
     ssh_session my_ssh_session;
     int rc;
