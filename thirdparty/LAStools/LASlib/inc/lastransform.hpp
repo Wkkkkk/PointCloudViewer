@@ -24,7 +24,6 @@
   
   CHANGE HISTORY:
   
-    10 May 2019 -- checking for overflows in X, Y, Z 32 bit integers of fixed-point LAS
      6 March 2018 -- changed '%g' to '%lf' for all sprintf() of F64 values
     28 February 2017 -- now '-set_RGB_of_class' also works for classifications > 31
      1 February 2017 -- new '-copy_intensity_into_z' for use in lasgrid or lascanopy
@@ -51,14 +50,10 @@ public:
   virtual const CHAR * name() const = 0;
   virtual I32 get_command(CHAR* string) const = 0;
   virtual U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CHANNEL_RETURNS_XY; };
-  inline I64 get_overflow() const { return overflow; };
-  inline void zero_overflow() { overflow = 0; };
   virtual void transform(LASpoint* point) = 0;
-  virtual void reset(){ overflow = 0; };
-  inline LASoperation(){ overflow = 0; };
+
+    virtual void reset() {};
   virtual ~LASoperation(){};
-protected:
-  I64 overflow;
 };
 
 class LAStransform
@@ -81,9 +76,6 @@ public:
   void setPointSource(U16 value);
 
   void transform(LASpoint* point);
-
-  void check_for_overflow() const;
-
   void reset();
 
   LAStransform();

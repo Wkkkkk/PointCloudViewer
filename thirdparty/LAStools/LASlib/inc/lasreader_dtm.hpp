@@ -24,7 +24,6 @@
   
   CHANGE HISTORY:
   
-    10 May 2019 -- checking for overflows in X, Y, Z 32 bit integers of fixed-point LAS
     10 October 2013 -- created after returning from INTERGEO 2013 in Essen
   
 ===============================================================================
@@ -67,9 +66,6 @@ private:
   F32 xdim, ydim;
   F32 nodata;
   I16 data_type;  // 2 = F32, 1 = I32, 0 = I16, 3 = F64
-  I64 overflow_I32_x;
-  I64 overflow_I32_y;
-  I64 overflow_I32_z;
 
   void clean();
   void populate_scale_and_offset();

@@ -25,7 +25,6 @@
   
   CHANGE HISTORY:
   
-    10 May 2019 -- checking for overflows in X, Y, Z of I32 of fixed-point LAS 
     15 June 2018 -- fix in flag copy from legacy (0-5) to extended (6-10) type
     10 March 2017 -- fix in copy_to() and copy_from() new LAS 1.4 point types
     10 October 2016 -- small fixes for NIR and extended scanner channel
@@ -597,9 +596,11 @@ public:
   inline F64 get_y() const { return quantizer->get_y(Y); };
   inline F64 get_z() const { return quantizer->get_z(Z); };
 
-  inline BOOL set_x(const F64 x) { I64 X = quantizer->get_X(x); this->X = (I32)(X); return I32_FITS_IN_RANGE(X); };
-  inline BOOL set_y(const F64 y) { I64 Y = quantizer->get_Y(y); this->Y = (I32)(Y); return I32_FITS_IN_RANGE(Y); };
-  inline BOOL set_z(const F64 z) { I64 Z = quantizer->get_Z(z); this->Z = (I32)(Z); return I32_FITS_IN_RANGE(Z); };
+    inline void set_x(const F64 x) { this->X = quantizer->get_X(x); };
+
+    inline void set_y(const F64 y) { this->Y = quantizer->get_Y(y); };
+
+    inline void set_z(const F64 z) { this->Z = quantizer->get_Z(z); };
 
   inline BOOL is_extended_point_type() const { return extended_point_type; };
 
@@ -629,23 +630,16 @@ public:
     coordinates[2] = get_z();
   };
 
-  inline BOOL compute_XYZ()
-  {
-    BOOL retX = set_x(coordinates[0]);
-    BOOL retY = set_y(coordinates[1]);
-    BOOL retZ = set_z(coordinates[2]);
-    return (retX && retY && retZ);
+    inline void compute_XYZ() {
+        set_x(coordinates[0]);
+        set_y(coordinates[1]);
+        set_z(coordinates[2]);
   };
 
-  inline BOOL compute_XYZ(const LASquantizer* quantizer)
-  {
-    I64 X = quantizer->get_X(coordinates[0]);
-    I64 Y = quantizer->get_Y(coordinates[1]);
-    I64 Z = quantizer->get_Z(coordinates[2]);
-    this->X = (I32)(X);
-    this->Y = (I32)(Y);
-    this->Z = (I32)(Z);
-    return (I32_FITS_IN_RANGE(X) && I32_FITS_IN_RANGE(Y) && I32_FITS_IN_RANGE(Z));
+    inline void compute_XYZ(const LASquantizer *quantizer) {
+        X = quantizer->get_X(coordinates[0]);
+        Y = quantizer->get_Y(coordinates[1]);
+        Z = quantizer->get_Z(coordinates[2]);
   };
 
   // generic functions for attributes in extra bytes

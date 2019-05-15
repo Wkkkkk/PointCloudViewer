@@ -142,11 +142,11 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
   else
   {
     header.file_creation_day = 1;
-    header.file_creation_year = 2019;
+    header.file_creation_year = 2016;
   }
 #else
   header.file_creation_day = 1;
-  header.file_creation_year = 2019;
+    header.file_creation_year = 2017;
 #endif
   if (point_type)
   {
@@ -229,6 +229,12 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
     header.point_data_record_length = 20;
   }
 
+    if (header.point_data_format > 5) {
+        header.version_minor = 4;
+        header.header_size = 375;
+        header.offset_to_point_data = 375;
+    }
+
   this->point_type = header.point_data_format;
 
   // maybe attributes in extra bytes
@@ -279,183 +285,6 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
 
     for (i = 0; i < skip_lines; i++) fgets(line, 512, file);
 
-    if (ipts)
-    {
-      if (fgets(line, 512, file))
-      {
-#ifdef _WIN32
-        if (sscanf(line, "%I64d", &npoints) != 1)
-#else
-        if (sscanf(line, "%lld", &npoints) != 1)
-#endif
-        {
-          fprintf(stderr, "ERROR: parsing number of points for '-itps'\n");
-          return FALSE;
-        }
-#ifdef _WIN32
-        fprintf(stderr, "PTS header states %I64d points. ignoring ...\n", npoints);
-#else
-        fprintf(stderr, "PTS header states %lld points. ignoring ...\n", npoints);
-#endif
-        npoints = 0;
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading PTS header for '-itps'\n");
-        return FALSE;
-      }
-    }
-    else if (iptx)
-    {
-      I32 ncols;
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%d", &ncols) != 1)
-        {
-          fprintf(stderr, "ERROR: parsing number of cols\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with number of cols\n");
-        return FALSE;
-      }
-      I32 nrows;
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%d", &nrows) != 1)
-        {
-          fprintf(stderr, "ERROR: parsing number of rows\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with number of rows\n");
-        return FALSE;
-      }
-      npoints = (I64)ncols*(I64)nrows;
-#ifdef _WIN32
-      fprintf(stderr, "PTX header states %d cols by %d rows aka %I64d points. ignoring ...\n", ncols, nrows, npoints);
-#else
-      fprintf(stderr, "PTX header states %d cols by %d rows aka %lld points. ignoring ...\n", ncols, nrows, npoints);
-#endif
-      F64 translation[3];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf", &(translation[0]), &(translation[1]), &(translation[2])) != 3)
-        {
-          fprintf(stderr, "ERROR: parsing translation\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with translation\n");
-        return FALSE;
-      }
-      F64 rotation_row_0[3];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf", &(rotation_row_0[0]), &(rotation_row_0[1]), &(rotation_row_0[2])) != 3)
-        {
-          fprintf(stderr, "ERROR: parsing rotation row 0\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with rotation row 0\n");
-        return FALSE;
-      }
-      F64 rotation_row_1[3];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf", &(rotation_row_1[0]), &(rotation_row_1[1]), &(rotation_row_1[2])) != 3)
-        {
-          fprintf(stderr, "ERROR: parsing rotation row 1\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with rotation row 1\n");
-        return FALSE;
-      }
-      F64 rotation_row_2[3];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf", &(rotation_row_2[0]), &(rotation_row_2[1]), &(rotation_row_2[2])) != 3)
-        {
-          fprintf(stderr, "ERROR: parsing rotation row 2\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with rotation row 2\n");
-        return FALSE;
-      }
-      F64 transformation_row_0[4];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf %lf", &(transformation_row_0[0]), &(transformation_row_0[1]), &(transformation_row_0[2]), &(transformation_row_0[3])) != 4)
-        {
-          fprintf(stderr, "ERROR: parsing transformation row 0\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with transformation row 0\n");
-        return FALSE;
-      }
-      F64 transformation_row_1[4];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf %lf", &(transformation_row_1[0]), &(transformation_row_1[1]), &(transformation_row_1[2]), &(transformation_row_1[3])) != 4)
-        {
-          fprintf(stderr, "ERROR: parsing transformation row 1\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with transformation row 1\n");
-        return FALSE;
-      }
-      F64 transformation_row_2[4];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf %lf", &(transformation_row_2[0]), &(transformation_row_2[1]), &(transformation_row_2[2]), &(transformation_row_2[3])) != 4)
-        {
-          fprintf(stderr, "ERROR: parsing transformation row 2\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with transformation row 2\n");
-        return FALSE;
-      }
-      F64 transformation_row_3[4];
-      if (fgets(line, 512, file))
-      {
-        if (sscanf(line, "%lf %lf %lf %lf", &(transformation_row_3[0]), &(transformation_row_3[1]), &(transformation_row_3[2]), &(transformation_row_3[3])) != 4)
-        {
-          fprintf(stderr, "ERROR: parsing transformation row 3\n");
-          return FALSE;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: reading line with transformation row 3\n");
-        return FALSE;
-      }
-      npoints = 0;
-    }
-
     // read the first line
 
     while (fgets(line, 512, file))
@@ -499,7 +328,8 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
     }
     else
     {
-      if (point.return_number >= 1 && point.return_number <= 7) header.extended_number_of_points_by_return[point.return_number-1]++;
+        if (point.return_number >= 1 && point.return_number <= 5)
+            header.number_of_points_by_return[point.return_number - 1]++;
     }
 
     // init the min and max of attributes in extra bytes
@@ -528,7 +358,8 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
         }
         else
         {
-          if (point.return_number >= 1 && point.return_number <= 7) header.extended_number_of_points_by_return[point.return_number-1]++;
+            if (point.return_number >= 1 && point.return_number <= 5)
+                header.number_of_points_by_return[point.return_number - 1]++;
         }
         // update bounding box
         if (point.coordinates[0] < header.min_x) header.min_x = point.coordinates[0];
@@ -553,18 +384,9 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
         fprintf(stderr, "WARNING: cannot parse '%s' with '%s'. skipping ...\n", line, parse_less);
       }
     }
-
-#ifdef _WIN32
-    fprintf(stderr, "counted %I64d points in populate pass.\n", npoints);
-#else
-    fprintf(stderr, "counted %lld points in populate pass.\n", npoints);
-#endif
-
-    if (point.extended_point_type || (npoints > U32_MAX) || header.extended_number_of_points_by_return[5] || header.extended_number_of_points_by_return[6] || header.extended_number_of_points_by_return[7] || header.extended_number_of_points_by_return[8] || header.extended_number_of_points_by_return[9] || header.extended_number_of_points_by_return[10] || header.extended_number_of_points_by_return[11] || header.extended_number_of_points_by_return[12] || header.extended_number_of_points_by_return[13] || header.extended_number_of_points_by_return[14])
+      if (point.extended_point_type || (npoints > U32_MAX))
     {
       header.version_minor = 4;
-      header.header_size = 375;
-      header.offset_to_point_data = 375;
       header.number_of_point_records = 0;
       header.number_of_points_by_return[0] = 0;
       header.number_of_points_by_return[1] = 0;
@@ -575,21 +397,7 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
     }
     else
     {
-      header.version_minor = 2;
-      header.header_size = 227;
-      header.offset_to_point_data = 227;
       header.number_of_point_records = (U32)npoints;
-      header.number_of_points_by_return[0] = (U32)header.extended_number_of_points_by_return[0];
-      header.number_of_points_by_return[1] = (U32)header.extended_number_of_points_by_return[1];
-      header.number_of_points_by_return[2] = (U32)header.extended_number_of_points_by_return[2];
-      header.number_of_points_by_return[3] = (U32)header.extended_number_of_points_by_return[3];
-      header.number_of_points_by_return[4] = (U32)header.extended_number_of_points_by_return[4];
-      header.extended_number_of_point_records = 0;
-      header.extended_number_of_points_by_return[0] = 0;
-      header.extended_number_of_points_by_return[1] = 0;
-      header.extended_number_of_points_by_return[2] = 0;
-      header.extended_number_of_points_by_return[3] = 0;
-      header.extended_number_of_points_by_return[4] = 0;
     }
     free(parse_less);
 
@@ -644,47 +452,18 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
   {
     if (fgets(line, 512, file))
     {
-      if (!populated_header)
-      {
 #ifdef _WIN32
-        if (sscanf(line, "%I64d", &npoints) != 1)
+        sscanf(line, "%I64d", &npoints);
 #else
-        if (sscanf(line, "%lld", &npoints) != 1)
+        sscanf(line, "%lld", &npoints);
 #endif
-        {
-          fprintf(stderr, "ERROR: parsing number of points for '-itps'\n");
-          return FALSE;
-        }
+        if (npoints > U32_MAX) {
+            header.version_minor = 4;
+            header.number_of_point_records = 0;
+            header.extended_number_of_point_records = npoints;
+        } else {
+            header.number_of_point_records = (U32) npoints;
       }
-      if (!populated_header)
-      {
-        if (npoints > U32_MAX)
-        {
-          header.version_minor = 4;
-          header.header_size = 375;
-          header.offset_to_point_data = 375;
-          header.number_of_point_records = 0;
-          header.number_of_points_by_return[0] = 0;
-          header.number_of_points_by_return[1] = 0;
-          header.number_of_points_by_return[2] = 0;
-          header.number_of_points_by_return[3] = 0;
-          header.number_of_points_by_return[4] = 0;
-          header.extended_number_of_point_records = npoints;
-        }
-        else
-        {
-          header.version_minor = 2;
-          header.header_size = 227;
-          header.offset_to_point_data = 227;
-          header.number_of_point_records = (U32)npoints;
-          header.extended_number_of_point_records = 0;
-        }
-      }
-    }
-    else
-    {
-      fprintf(stderr, "ERROR: reading PTS header for '-itps'\n");
-      return FALSE;
     }
 
     // add payload that informs about PTS
@@ -727,29 +506,12 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
       return FALSE;
     }
     npoints = (I64)ncols*(I64)nrows;
-    if (!populated_header)
-    {
-      if (npoints > U32_MAX)
-      {
-        header.version_minor = 4;
-        header.header_size = 375;
-        header.offset_to_point_data = 375;
-        header.number_of_point_records = 0;
-        header.number_of_points_by_return[0] = 0;
-        header.number_of_points_by_return[1] = 0;
-        header.number_of_points_by_return[2] = 0;
-        header.number_of_points_by_return[3] = 0;
-        header.number_of_points_by_return[4] = 0;
-        header.extended_number_of_point_records = npoints;
-      }
-      else
-      {
-        header.version_minor = 2;
-        header.header_size = 227;
-        header.offset_to_point_data = 227;
-        header.number_of_point_records = (U32)npoints;
-        header.extended_number_of_point_records = 0;
-      }
+      if (npoints > U32_MAX) {
+          header.version_minor = 4;
+          header.number_of_point_records = 0;
+          header.extended_number_of_point_records = npoints;
+      } else {
+          header.number_of_point_records = (U32) npoints;
     }
     F64 translation[3];
     if (fgets(line, 512, file))
@@ -902,21 +664,6 @@ BOOL LASreaderTXT::open(FILE* file, const CHAR* file_name, U8 point_type, const 
     ((F64*)payload)[32] = transformation_row_3[2];
     ((F64*)payload)[33] = transformation_row_3[3];
     header.add_vlr("LAStools", 2001, 32+240, payload);
-  }
-  else if (!populated_header)
-  {
-    if (this->point_type > 5)
-    {
-      header.version_minor = 4;
-      header.header_size = 375;
-      header.offset_to_point_data = 375;
-    }
-    else
-    {
-      header.version_minor = 2;
-      header.header_size = 227;
-      header.offset_to_point_data = 227;
-    }
   }
 
   // read the first line with full parse_string
@@ -1176,9 +923,9 @@ BOOL LASreaderTXT::read_point_default()
     }
   }
   // compute the quantized x, y, and z values
-  point.set_X((I32)header.get_X(point.coordinates[0]));
-  point.set_Y((I32)header.get_Y(point.coordinates[1]));
-  point.set_Z((I32)header.get_Z(point.coordinates[2]));
+    point.set_X(header.get_X(point.coordinates[0]));
+    point.set_Y(header.get_Y(point.coordinates[1]));
+    point.set_Z(header.get_Z(point.coordinates[2]));
   p_count++;
   if (!populated_header)
   {
@@ -1187,10 +934,6 @@ BOOL LASreaderTXT::read_point_default()
     if (point.extended_point_type)
     {
       if (point.extended_return_number >= 1 && point.extended_return_number <= 15) header.extended_number_of_points_by_return[point.extended_return_number-1]++;
-    }
-    else if (header.version_minor == 4)
-    {
-      if (point.return_number >= 1 && point.return_number <= 7) header.extended_number_of_points_by_return[point.return_number-1]++;
     }
     else
     {
@@ -1715,35 +1458,12 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       while (l[0] && (l[0] == ' ' || l[0] == ',' || l[0] == '\t' || l[0] == ';')) l++; // first skip white spaces
       if (l[0] == 0) return FALSE;
       if (sscanf(l, "%d", &temp_i) != 1) return FALSE;
-      if (temp_i < 0)
+        if (temp_i < 0 || temp_i > 255)
       {
-        fprintf(stderr, "WARNING: classification %d is negative. zeroing ...\n", temp_i);
-        point.set_classification(0);
-        point.set_extended_classification(0);
-      }
-      else if (point.extended_point_type)
-      {
-        if (temp_i > 255)
-        {
-          fprintf(stderr, "WARNING: extended classification %d is larger than 255. clamping ...\n", temp_i);
-          point.set_extended_classification(255);
-        }
-        else
-        {
-          point.set_extended_classification((U8)temp_i);
-        }
-      }
-      else
-      {
-        if (temp_i > 31)
-        {
-          fprintf(stderr, "WARNING: classification %d is larger than 31. clamping ...\n", temp_i);
-          point.set_classification(31);
-        }
-        else
-        {
-          point.set_classification((U8)temp_i);
-        }
+          fprintf(stderr, "WARNING: classification %d is out of range of unsigned char\n", temp_i);
+          point.set_classification(U8_CLAMP(temp_i));
+      } else {
+            point.set_classification((U8) temp_i);
       }
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
@@ -2020,12 +1740,12 @@ void LASreaderTXT::populate_bounding_box()
 {
   // compute quantized and then unquantized bounding box
 
-  F64 dequant_min_x = header.get_x((I32)(header.get_X(header.min_x)));
-  F64 dequant_max_x = header.get_x((I32)(header.get_X(header.max_x)));
-  F64 dequant_min_y = header.get_y((I32)(header.get_Y(header.min_y)));
-  F64 dequant_max_y = header.get_y((I32)(header.get_Y(header.max_y)));
-  F64 dequant_min_z = header.get_z((I32)(header.get_Z(header.min_z)));
-  F64 dequant_max_z = header.get_z((I32)(header.get_Z(header.max_z)));
+    F64 dequant_min_x = header.get_x(header.get_X(header.min_x));
+    F64 dequant_max_x = header.get_x(header.get_X(header.max_x));
+    F64 dequant_min_y = header.get_y(header.get_Y(header.min_y));
+    F64 dequant_max_y = header.get_y(header.get_Y(header.max_y));
+    F64 dequant_min_z = header.get_z(header.get_Z(header.min_z));
+    F64 dequant_max_z = header.get_z(header.get_Z(header.max_z));
 
   // make sure there is not sign flip
 

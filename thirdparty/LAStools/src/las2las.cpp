@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===============================================================================
 
   FILE:  las2las.cpp
@@ -323,10 +323,6 @@ int main(int argc, char *argv[])
   int set_attribute_offsets = 0;
   int set_attribute_offset_index[5] = { -1, -1, -1, -1, -1 };
   double set_attribute_offset_offset[5] = { 0.0, 0.0, 0.0, 0.0, 0.0 };
-  int unset_attribute_scales = 0;
-  int unset_attribute_scale_index[5] = { -1, -1, -1, -1, -1 };
-  int unset_attribute_offsets = 0;
-  int unset_attribute_offset_index[5] = { -1, -1, -1, -1, -1 };
   bool remove_tiling_vlr = false;
   bool remove_original_vlr = false;
   bool remove_empty_files = true;
@@ -360,7 +356,7 @@ int main(int argc, char *argv[])
   {
     for (i = 1; i < argc; i++)
     {
-      if (argv[i][0] == '�') argv[i][0] = '-';
+        if (argv[i][0] == '') argv[i][0] = '-';
       if (strcmp(argv[i],"-week_to_adjusted") == 0)
       {
         set_global_encoding_gps_bit = 1;
@@ -780,118 +776,6 @@ int main(int argc, char *argv[])
         usage(true);
       }
     }
-    else if (strncmp(argv[i],"-add_", 5) == 0)
-    {
-      if (strcmp(argv[i],"-add_attribute") == 0)
-      {
-        if ((i+3) >= argc)
-        {
-          fprintf(stderr,"ERROR: '%s' needs at least 3 arguments: data_type name description\n", argv[i]);
-          usage(true);
-        }
-        if (((i+4) < argc) && (atof(argv[i+4]) != 0.0))
-        {
-          if (((i+5) < argc) && ((atof(argv[i+5]) != 0.0) || (strcmp(argv[i+5], "0") == 0) || (strcmp(argv[i+5], "0.0") == 0)))
-          {
-            if (((i+6) < argc) && ((atof(argv[i+6]) != 0.0) || (strcmp(argv[i+6], "0") == 0) || (strcmp(argv[i+6], "0.0") == 0)))
-            {
-              if (((i+7) < argc) && ((atof(argv[i+7]) != 0.0) || (strcmp(argv[i+7], "0") == 0) || (strcmp(argv[i+7], "0.0") == 0)))
-              {
-                if (((i+8) < argc) && ((atof(argv[i+8]) != 0.0) || (strcmp(argv[i+8], "0") == 0) || (strcmp(argv[i+8], "0.0") == 0)))
-                {
-                  lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3], atof(argv[i+4]), atof(argv[i+5]), atof(argv[i+6]), atof(argv[i+7]), atof(argv[i+8]));
-                  i+=8;
-                }
-                else
-                {
-                  lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3], atof(argv[i+4]), atof(argv[i+5]), atof(argv[i+6]), atof(argv[i+7]));
-                  i+=7;
-                }
-              }
-              else
-              { 
-                lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3], atof(argv[i+4]), atof(argv[i+5]), atof(argv[i+6]));
-                i+=6;
-              }
-            }
-            else
-            { 
-              lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3], atof(argv[i+4]), atof(argv[i+5]));
-              i+=5;
-            }
-          }
-          else
-          {
-            lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3], atof(argv[i+4]));
-            i+=4;
-          }
-        }
-        else
-        {
-          lasreadopener.add_attribute(atoi(argv[i+1]), argv[i+2], argv[i+3]);
-          i+=3;
-        }
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: cannot understand argument '%s'\n", argv[i]);
-        usage(true);
-      }
-    }
-    else if (strncmp(argv[i],"-unset_", 7) == 0)
-    {
-      if (strcmp(argv[i],"-unset_attribute_scale") == 0)
-      {
-        if ((i+1) >= argc)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 1 argument: index\n", argv[i]);
-          byebye(true);
-        }
-        if (unset_attribute_scales < 5)
-        {
-          if (sscanf(argv[i+1],"%u",&(unset_attribute_scale_index[unset_attribute_scales])) != 1)
-          {
-            fprintf(stderr, "ERROR: cannot understand argument '%s' for '%s'\n", argv[i+1], argv[i]);
-            usage(true);
-          }
-          unset_attribute_scales++;
-        }
-        else
-        {
-          fprintf(stderr,"ERROR: cannot '%s' more than 5 times\n", argv[i]);
-          byebye(true);
-        }
-        i+=1;
-      }
-      else if (strcmp(argv[i],"-unset_attribute_offset") == 0)
-      {
-        if ((i+1) >= argc)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 1 argument: index\n", argv[i]);
-          byebye(true);
-        }
-        if (unset_attribute_offsets < 5)
-        {
-          if (sscanf(argv[i+1],"%u",&(unset_attribute_offset_index[unset_attribute_offsets])) != 1)
-          {
-            fprintf(stderr, "ERROR: cannot understand argument '%s' for '%s'\n", argv[i+1], argv[i]);
-            usage(true);
-          }
-          unset_attribute_offsets++;
-        }
-        else
-        {
-          fprintf(stderr,"ERROR: cannot '%s' more than 5 times\n", argv[i]);
-          byebye(true);
-        }
-        i+=1;
-      }
-      else
-      {
-        fprintf(stderr, "ERROR: cannot understand argument '%s'\n", argv[i]);
-        usage(true);
-      }
-    }
     else if (strcmp(argv[i],"-move_evlrs_to_vlrs") == 0)
     {
       move_evlrs_to_vlrs = true;
@@ -1074,11 +958,7 @@ int main(int argc, char *argv[])
         {
           if (set_attribute_scale_index[i] < lasreader->header.number_attributes)
           {
-            lasreader->header.attributes[set_attribute_scale_index[i]].set_scale(set_attribute_scale_scale[i]);
-          }
-          else
-          {
-            fprintf(stderr, "ERROR: attribute index %d out-of-range. only %d attributes in file. ignoring ... \n", set_attribute_scale_index[i], lasreader->header.number_attributes);
+              lasreader->header.attributes[set_attribute_scale_index[i]].scale[0] = set_attribute_scale_scale[i];
           }
         }
       }
@@ -1092,53 +972,13 @@ int main(int argc, char *argv[])
         {
           if (set_attribute_offset_index[i] < lasreader->header.number_attributes)
           {
-            lasreader->header.attributes[set_attribute_offset_index[i]].set_offset(set_attribute_offset_offset[i]);
-          }
-          else
-          {
-            fprintf(stderr, "ERROR: attribute index %d out-of-range. only %d attributes in file. ignoring ... \n", set_attribute_offset_index[i], lasreader->header.number_attributes);
+              lasreader->header.attributes[set_attribute_offset_index[i]].offset[0] = set_attribute_offset_offset[i];
           }
         }
       }
     }
 
-    if (unset_attribute_scales)
-    {
-      for (i = 0; i < unset_attribute_scales; i++)
-      {
-        if (unset_attribute_scale_index[i] != -1)
-        {
-          if (unset_attribute_scale_index[i] < lasreader->header.number_attributes)
-          {
-            lasreader->header.attributes[unset_attribute_scale_index[i]].unset_scale();
-          }
-          else
-          {
-            fprintf(stderr, "ERROR: attribute index %d out-of-range. only %d attributes in file. ignoring ... \n", unset_attribute_scale_index[i], lasreader->header.number_attributes);
-          }
-        }
-      }
-    }
-
-    if (unset_attribute_offsets)
-    {
-      for (i = 0; i < unset_attribute_offsets; i++)
-      {
-        if (unset_attribute_offset_index[i] != -1)
-        {
-          if (unset_attribute_offset_index[i] < lasreader->header.number_attributes)
-          {
-            lasreader->header.attributes[unset_attribute_offset_index[i]].unset_offset();
-          }
-          else
-          {
-            fprintf(stderr, "ERROR: attribute index %d out-of-range. only %d attributes in file. ignoring ... \n", unset_attribute_offset_index[i], lasreader->header.number_attributes);
-          }
-        }
-      }
-    }
-
-    if (set_attribute_scales || set_attribute_offsets || unset_attribute_scales || unset_attribute_offsets)
+      if (set_attribute_scales || set_attribute_offsets)
     {
       lasreader->header.update_extra_bytes_vlr();
     }

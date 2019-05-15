@@ -1,4 +1,4 @@
-/*
+﻿/*
 ===============================================================================
 
   FILE:  lasindex.cpp
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
   {
     for (i = 1; i < argc; i++)
     {
-      if (argv[i][0] == '�') argv[i][0] = '-';
+        if (argv[i][0] == '') argv[i][0] = '-';
     }
     if (!lasreadopener.parse(argc, argv)) byebye(true);
   }

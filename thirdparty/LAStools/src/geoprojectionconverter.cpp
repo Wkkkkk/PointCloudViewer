@@ -826,10 +826,6 @@ bool GeoProjectionConverter::set_projection_from_geo_keys(int num_geo_keys, GeoP
   int offsetProjFalseNorthingGeoKey = -1;
   int offsetProjCenterLatGeoKey = -1;
   int offsetProjCenterLongGeoKey = -1;
-  int offsetProjFalseOriginLongGeoKey = -1;
-  int offsetProjFalseOriginLatGeoKey = -1;
-  int offsetProjFalseOriginEastingGeoKey = -1;
-  int offsetProjFalseOriginNorthingGeoKey = -1;
   int offsetProjScaleAtNatOriginGeoKey = -1;
   int offsetProjScaleAtCenterGeoKey = -1;
   int offsetProjAzimuthAngleGeoKey = -1;
@@ -1193,18 +1189,6 @@ bool GeoProjectionConverter::set_projection_from_geo_keys(int num_geo_keys, GeoP
     case 3083: // ProjFalseNorthingGeoKey
       offsetProjFalseNorthingGeoKey = geo_keys[i].value_offset;
       break;
-    case 3084: // ProjFalseOriginLongGeoKey
-      offsetProjFalseOriginLongGeoKey = geo_keys[i].value_offset;
-      break;
-    case 3085: // ProjFalseOriginLatGeoKey
-      offsetProjFalseOriginLatGeoKey = geo_keys[i].value_offset;
-      break;
-    case 3086: // ProjFalseOriginEastingGeoKey
-      offsetProjFalseOriginEastingGeoKey = geo_keys[i].value_offset;
-      break;
-    case 3087: // ProjFalseOriginNorthingGeoKey
-      offsetProjFalseOriginNorthingGeoKey = geo_keys[i].value_offset;
-      break;
     case 3088: // ProjCenterLongGeoKey
       offsetProjCenterLongGeoKey = geo_keys[i].value_offset;
       break;
@@ -1260,17 +1244,19 @@ bool GeoProjectionConverter::set_projection_from_geo_keys(int num_geo_keys, GeoP
     }
     else if (user_defined_projection == 8)
     {
-      if (((offsetProjFalseEastingGeoKey >= 0) || (offsetProjFalseOriginEastingGeoKey >= 0)) &&
-          ((offsetProjFalseNorthingGeoKey >= 0) || (offsetProjFalseOriginNorthingGeoKey >= 0)) &&
-          ((offsetProjNatOriginLatGeoKey >= 0) || (offsetProjFalseOriginLatGeoKey >= 0)) &&
-          ((offsetProjCenterLongGeoKey >= 0) || (offsetProjNatOriginLongGeoKey >= 0) || (offsetProjFalseOriginLongGeoKey >= 0)) &&
-          (offsetProjStdParallel1GeoKey >= 0) &&
-          (offsetProjStdParallel2GeoKey >= 0))
+        if ((offsetProjFalseEastingGeoKey >= 0) &&
+            (offsetProjFalseNorthingGeoKey >= 0) &&
+            (offsetProjNatOriginLatGeoKey >= 0) &&
+            ((offsetProjCenterLongGeoKey >= 0) || (offsetProjNatOriginLongGeoKey >= 0)) &&
+            (offsetProjStdParallel1GeoKey >= 0) &&
+            (offsetProjStdParallel1GeoKey >= 0) &&
+            (offsetProjStdParallel2GeoKey >= 0))
       {
-        double falseEastingMeter = ((offsetProjFalseEastingGeoKey >= 0) ? geo_double_params[offsetProjFalseEastingGeoKey] * coordinates2meter : geo_double_params[offsetProjFalseOriginEastingGeoKey] * coordinates2meter);
-        double falseNorthingMeter = ((offsetProjFalseNorthingGeoKey >= 0) ? geo_double_params[offsetProjFalseNorthingGeoKey] * coordinates2meter : geo_double_params[offsetProjFalseOriginNorthingGeoKey] * coordinates2meter);
-        double latOriginDeg = ((offsetProjNatOriginLatGeoKey >= 0) ? geo_double_params[offsetProjNatOriginLatGeoKey] : geo_double_params[offsetProjFalseOriginLatGeoKey]);
-        double longOriginDeg = ((offsetProjCenterLongGeoKey >= 0) ? geo_double_params[offsetProjCenterLongGeoKey] : ((offsetProjNatOriginLongGeoKey >= 0) ? geo_double_params[offsetProjNatOriginLongGeoKey] : geo_double_params[offsetProjFalseOriginLongGeoKey]));
+          double falseEastingMeter = geo_double_params[offsetProjFalseEastingGeoKey] * coordinates2meter;
+          double falseNorthingMeter = geo_double_params[offsetProjFalseNorthingGeoKey] * coordinates2meter;
+          double latOriginDeg = geo_double_params[offsetProjNatOriginLatGeoKey];
+          double longOriginDeg = ((offsetProjCenterLongGeoKey >= 0) ? geo_double_params[offsetProjCenterLongGeoKey]
+                                                                    : geo_double_params[offsetProjNatOriginLongGeoKey]);
         if ((longOriginDeg == 0.0) && (offsetProjNatOriginLongGeoKey >= 0)) longOriginDeg = geo_double_params[offsetProjNatOriginLongGeoKey];
         double firstStdParallelDeg = geo_double_params[offsetProjStdParallel1GeoKey];
         double secondStdParallelDeg = geo_double_params[offsetProjStdParallel2GeoKey];
@@ -2288,7 +2274,11 @@ bool GeoProjectionConverter::get_ogc_wkt_from_projection(int& len, char** ogc_wk
           epsg_name = get_epsg_name_from_pcs_file(argv_zero, projection->geokey);
         }
         // maybe output a compound CRS
-        if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) || (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) || (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) || (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) || (vertical_geokey == GEO_VERTICAL_DHHN92) || (vertical_geokey == GEO_VERTICAL_DHHN2016) )
+          if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) ||
+              (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) ||
+              (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) ||
+              (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) ||
+              (vertical_geokey == GEO_VERTICAL_DHHN92))
         {
           n += sprintf(&string[n], "COMPD_CS[\"%s + ", (epsg_name ? epsg_name : projection->name));
 
@@ -2362,10 +2352,6 @@ bool GeoProjectionConverter::get_ogc_wkt_from_projection(int& len, char** ogc_wk
           else if (vertical_geokey == GEO_VERTICAL_DHHN92)
           {
             n += sprintf(&string[n], "DHHN92");
-          }
-          else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-          {
-            n += sprintf(&string[n], "DHHN2016");
           }
 
           if (source)
@@ -2557,7 +2543,11 @@ bool GeoProjectionConverter::get_ogc_wkt_from_projection(int& len, char** ogc_wk
           n += sprintf(&string[n], "]");
         }
       }
-      if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) || (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) || (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) || (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) || (vertical_geokey == GEO_VERTICAL_DHHN92) || (vertical_geokey == GEO_VERTICAL_DHHN2016) )
+        if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) ||
+            (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) ||
+            (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) ||
+            (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) ||
+            (vertical_geokey == GEO_VERTICAL_DHHN92))
       {
         // comma for compound CRS
         n += sprintf(&string[n], ",");
@@ -2634,10 +2624,6 @@ bool GeoProjectionConverter::get_ogc_wkt_from_projection(int& len, char** ogc_wk
         {
           n += sprintf(&string[n], "VERT_CS[\"DHHN92\",VERT_DATUM[\"Deutsches Haupthoehennetz 1992\",2005,AUTHORITY[\"EPSG\",\"5783\"]],");
         }
-        else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-        {
-          n += sprintf(&string[n], "VERT_CS[\"DHHN2016\",VERT_DATUM[\"Deutsches Haupthoehennetz 2016\",2005,AUTHORITY[\"EPSG\",\"7837\"]],");
-        }
         if (source)
         {
           if (elevation2meter == 1.0)
@@ -2703,10 +2689,6 @@ bool GeoProjectionConverter::get_ogc_wkt_from_projection(int& len, char** ogc_wk
         else if (vertical_geokey == GEO_VERTICAL_DHHN92)
         {
           n += sprintf(&string[n], "AXIS[\"Gravity-related height\",UP],AUTHORITY[\"EPSG\",\"5783\"]]");
-        }
-        else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-        {
-          n += sprintf(&string[n], "AXIS[\"Gravity-related height\",UP],AUTHORITY[\"EPSG\",\"7837\"]]");
         }
         // close bracket for compound CRS
         n += sprintf(&string[n], "]");
@@ -2977,7 +2959,11 @@ bool GeoProjectionConverter::get_prj_from_projection(int& len, char** prj, bool 
         n += sprintf(&string[n], "]");
       }
     }
-    if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) || (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) || (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) || (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) || (vertical_geokey == GEO_VERTICAL_DHHN92) || (vertical_geokey == GEO_VERTICAL_DHHN2016) )
+      if ((vertical_geokey == GEO_VERTICAL_NAVD88) || (vertical_geokey == GEO_VERTICAL_NGVD29) ||
+          (vertical_geokey == GEO_VERTICAL_CGVD2013) || (vertical_geokey == GEO_VERTICAL_EVRF2007) ||
+          (vertical_geokey == GEO_VERTICAL_CGVD28) || (vertical_geokey == GEO_VERTICAL_DVR90) ||
+          (vertical_geokey == GEO_VERTICAL_NN2000) || (vertical_geokey == GEO_VERTICAL_NN54) ||
+          (vertical_geokey == GEO_VERTICAL_DHHN92))
     {
       if (vertical_geokey == GEO_VERTICAL_NAVD88)
       {
@@ -3014,10 +3000,6 @@ bool GeoProjectionConverter::get_prj_from_projection(int& len, char** prj, bool 
       else if (vertical_geokey == GEO_VERTICAL_DHHN92)
       {
         n += sprintf(&string[n], "VERT_CS[\"DHHN92\",VERT_DATUM[\"Deutsches Haupthoehennetz 1992\",2005,AUTHORITY[\"EPSG\",\"5783\"]],");
-      }
-      else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-      {
-        n += sprintf(&string[n], "VERT_CS[\"DHHN2016\",VERT_DATUM[\"Deutsches Haupthoehennetz 2016\",2005,AUTHORITY[\"EPSG\",\"7837\"]],");
       }
       if (source)
       {
@@ -3084,10 +3066,6 @@ bool GeoProjectionConverter::get_prj_from_projection(int& len, char** prj, bool 
       else if (vertical_geokey == GEO_VERTICAL_DHHN92)
       {
         n += sprintf(&string[n], "AXIS[\"Gravity-related height\",UP],AUTHORITY[\"EPSG\",\"5783\"]]");
-      }
-      else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-      {
-        n += sprintf(&string[n], "AXIS[\"Gravity-related height\",UP],AUTHORITY[\"EPSG\",\"7837\"]]");
       }
     }
     len = n+1;
@@ -7156,11 +7134,6 @@ bool GeoProjectionConverter::parse(int argc, char* argv[])
         vertical_geokey = GEO_VERTICAL_DHHN92;
         *argv[i]='\0';
       }
-      else if (strcmp(argv[i],"-vertical_dhhn2016") == 0)
-      {
-        vertical_geokey = GEO_VERTICAL_DHHN2016;
-        *argv[i]='\0';
-      }
     }
     else if (strcmp(argv[i],"-latlong") == 0 || strcmp(argv[i],"-target_latlong") == 0)
     {
@@ -7589,18 +7562,11 @@ int GeoProjectionConverter::unparse(char* string) const
       }
     }
   }
-  if (has_elevation_units(true))
-  {
-    if (elevation2meter != 1.0)
-    {
-      if (elevation2meter == 0.3048)
-      {
-        n += sprintf(&string[n], "-elevation_feet ");
-      }
-      else
-      {
-        n += sprintf(&string[n], "-elevation_surveyfeet ");
-      }
+    if (elevation2meter != 1.0) {
+        if (elevation2meter == 0.3048) {
+            n += sprintf(&string[n], "-elevation_feet ");
+        } else {
+            n += sprintf(&string[n], "-elevation_surveyfeet ");
     }
   }
   if (vertical_geokey)
@@ -7644,10 +7610,6 @@ int GeoProjectionConverter::unparse(char* string) const
     else if (vertical_geokey == GEO_VERTICAL_DHHN92)
     {
       n += sprintf(&string[n], "-vertical_dhhn92 ");
-    }
-    else if (vertical_geokey == GEO_VERTICAL_DHHN2016)
-    {
-      n += sprintf(&string[n], "-vertical_dhhn2016 ");
     }
   }
   if (target_projection != 0)

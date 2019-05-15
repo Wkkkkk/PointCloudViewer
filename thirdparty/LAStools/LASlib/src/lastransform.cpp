@@ -43,10 +43,7 @@ public:
   inline const CHAR* name() const { return "translate_x"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), offset); };
   inline void transform(LASpoint* point) {
-    if (!point->set_x(point->get_x() + offset))
-    {
-      overflow++;
-    }
+      point->set_x(point->get_x() + offset);
   };
   LASoperationTranslateX(F64 offset) { this->offset = offset; };
 private:
@@ -59,10 +56,7 @@ public:
   inline const CHAR* name() const { return "translate_y"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), offset); };
   inline void transform(LASpoint* point) {
-    if (!point->set_y(point->get_y() + offset))
-    {
-      overflow++;
-    }
+      point->set_y(point->get_y() + offset);
   };
   LASoperationTranslateY(F64 offset) { this->offset = offset; };
 private:
@@ -76,10 +70,7 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), offset); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
-    if (!point->set_z(point->get_z() + offset))
-    {
-      overflow++;
-    }
+      point->set_z(point->get_z() + offset);
   };
   LASoperationTranslateZ(F64 offset) { this->offset = offset; };
 private:
@@ -93,18 +84,9 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf %lf ", name(), offset[0], offset[1], offset[2]); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CHANNEL_RETURNS_XY | LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
-    if (!point->set_x(point->get_x() + offset[0]))
-    {
-      overflow++;
-    }
-    if (!point->set_y(point->get_y() + offset[1]))
-    {
-      overflow++;
-    }
-    if (!point->set_z(point->get_z() + offset[2]))
-    {
-      overflow++;
-    }
+      point->set_x(point->get_x() + offset[0]);
+      point->set_y(point->get_y() + offset[1]);
+      point->set_z(point->get_z() + offset[2]);
   };
   LASoperationTranslateXYZ(F64 x_offset, F64 y_offset, F64 z_offset) { this->offset[0] = x_offset; this->offset[1] = y_offset; this->offset[2] = z_offset; };
 private:
@@ -117,10 +99,7 @@ public:
   inline const CHAR* name() const { return "scale_x"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), scale); };
   inline void transform(LASpoint* point) {
-    if (!point->set_x(point->get_x() * scale))
-    {
-      overflow++;
-    }
+      point->set_x(point->get_x() * scale);
   };
   LASoperationScaleX(F64 scale) { this->scale = scale; };
 private:
@@ -133,10 +112,7 @@ public:
   inline const CHAR* name() const { return "scale_y"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), scale); };
   inline void transform(LASpoint* point) {
-    if (!point->set_y(point->get_y() * scale))
-    {
-      overflow++;
-    }
+      point->set_y(point->get_y() * scale);
   };
   LASoperationScaleY(F64 scale) { this->scale = scale; };
 private:
@@ -150,10 +126,7 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf ", name(), scale); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
-    if (!point->set_z(point->get_z() * scale))
-    {
-      overflow++;
-    }
+      point->set_z(point->get_z() * scale);
   };
   LASoperationScaleZ(F64 scale) { this->scale = scale; };
 private:
@@ -167,18 +140,9 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf %lf ", name(), scale[0], scale[1], scale[2]); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CHANNEL_RETURNS_XY | LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
-    if (!point->set_x(point->get_x() * scale[0]))
-    {
-      overflow++;
-    }
-    if (!point->set_y(point->get_y() * scale[1]))
-    {
-      overflow++;
-    }
-    if (!point->set_z(point->get_z() * scale[2]))
-    {
-      overflow++;
-    }
+      point->set_x(point->get_x() * scale[0]);
+      point->set_y(point->get_y() * scale[1]);
+      point->set_z(point->get_z() * scale[2]);
   };
   LASoperationScaleXYZ(F64 x_scale, F64 y_scale, F64 z_scale) { this->scale[0] = x_scale; this->scale[1] = y_scale; this->scale[2] = z_scale; };
 private:
@@ -191,10 +155,7 @@ public:
   inline const CHAR* name() const { return "translate_then_scale_x"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf ", name(), offset, scale); };
   inline void transform(LASpoint* point) {
-    if (!point->set_x((point->get_x()+offset)*scale))
-    {
-      overflow++;
-    }
+      point->set_x((point->get_x() + offset) * scale);
   };
   LASoperationTranslateThenScaleX(F64 offset, F64 scale) { this->offset = offset; this->scale = scale; };
 private:
@@ -208,10 +169,7 @@ public:
   inline const CHAR* name() const { return "translate_then_scale_y"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf ", name(), offset, scale); };
   inline void transform(LASpoint* point) {
-    if (!point->set_y((point->get_y()+offset)*scale))
-    {
-      overflow++;
-    }
+      point->set_y((point->get_y() + offset) * scale);
   };
   LASoperationTranslateThenScaleY(F64 offset, F64 scale) { this->offset = offset; this->scale = scale; };
 private:
@@ -226,10 +184,7 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf ", name(), offset, scale); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
-    if (!point->set_z((point->get_z()+offset)*scale))
-    {
-      overflow++;
-    }
+      point->set_z((point->get_z() + offset) * scale);
   };
   LASoperationTranslateThenScaleZ(F64 offset, F64 scale) { this->offset = offset; this->scale = scale; };
 private:
@@ -245,14 +200,8 @@ public:
   inline void transform(LASpoint* point) {
     F64 x = point->get_x() - x_offset;
     F64 y = point->get_y() - y_offset;
-    if (!point->set_x(cos_angle*x - sin_angle*y + x_offset))
-    {
-      overflow++;
-    }
-    if (!point->set_y(cos_angle*y + sin_angle*x + y_offset))
-    {
-      overflow++;
-    }
+      point->set_x(cos_angle * x - sin_angle * y + x_offset);
+      point->set_y(cos_angle * y + sin_angle * x + y_offset);
   };
   LASoperationRotateXY(F64 angle, F64 x_offset, F64 y_offset) { this->angle = angle; this->x_offset = x_offset; this->y_offset = y_offset; cos_angle = cos(3.141592653589793238462643383279502884197169/180*angle); sin_angle = sin(3.141592653589793238462643383279502884197169/180*angle); };
 private:
@@ -270,44 +219,13 @@ public:
   inline void transform(LASpoint* point) {
     F64 x = point->get_x() - x_offset;
     F64 z = point->get_z() - z_offset;
-    if (!point->set_x(cos_angle*x - sin_angle*z + x_offset))
-    {
-      overflow++;
-    }
-    if (!point->set_z(cos_angle*z + sin_angle*x + z_offset))
-    {
-      overflow++;
-    }
+      point->set_x(cos_angle * x - sin_angle * z + x_offset);
+      point->set_z(cos_angle * z + sin_angle * x + z_offset);
   };
   LASoperationRotateXZ(F64 angle, F64 x_offset, F64 z_offset) { this->angle = angle; this->x_offset = x_offset; this->z_offset = z_offset; cos_angle = cos(3.141592653589793238462643383279502884197169/180*angle); sin_angle = sin(3.141592653589793238462643383279502884197169/180*angle); };
 private:
   F64 angle;
   F64 x_offset, z_offset;
-  F64 cos_angle, sin_angle;
-};
-
-class LASoperationRotateYZ : public LASoperation
-{
-public:
-  inline const CHAR* name() const { return "rotate_yz"; };
-  inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %lf %lf %lf ", name(), angle, y_offset, z_offset); };
-  inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CHANNEL_RETURNS_XY | LASZIP_DECOMPRESS_SELECTIVE_Z; };
-  inline void transform(LASpoint* point) {
-    F64 y = point->get_y() - y_offset;
-    F64 z = point->get_z() - z_offset;
-    if (!point->set_y(cos_angle*y - sin_angle*z + y_offset))
-    {
-      overflow++;
-    }
-    if (!point->set_z(cos_angle*z + sin_angle*y + z_offset))
-    {
-      overflow++;
-    }
-  };
-  LASoperationRotateYZ(F64 angle, F64 y_offset, F64 z_offset) { this->angle = angle; this->y_offset = y_offset; this->z_offset = z_offset; cos_angle = cos(3.141592653589793238462643383279502884197169/180*angle); sin_angle = sin(3.141592653589793238462643383279502884197169/180*angle); };
-private:
-  F64 angle;
-  F64 y_offset, z_offset;
   F64 cos_angle, sin_angle;
 };
 
@@ -321,18 +239,9 @@ public:
     F64 x = scale*( (       point->get_x())-(rz_rad*point->get_y())+(ry_rad*point->get_z())) + dx;
     F64 y = scale*( (rz_rad*point->get_x())+(       point->get_y())-(rx_rad*point->get_z())) + dy;
     F64 z = scale*(-(ry_rad*point->get_x())+(rx_rad*point->get_y())+(       point->get_z())) + dz;
-    if (!point->set_x(x))
-    {
-      overflow++;
-    }
-    if (!point->set_y(y))
-    {
-      overflow++;
-    }
-    if (!point->set_z(z))
-    {
-      overflow++;
-    }
+      point->set_x(x);
+      point->set_y(y);
+      point->set_z(z);
   };
   LASoperationTransformHelmert(F64 dx, F64 dy, F64 dz, F64 rx, F64 ry, F64 rz, F64 m) { this->dx = dx; this->dy = dy; this->dz = dz; this->rx = rx; this->ry = ry; this->rz = rz; this->m = m; rx_rad = 4.84813681109536e-6*rx; ry_rad = 4.84813681109536e-6*ry; rz_rad = 4.84813681109536e-6*rz; scale = 1.0+(1.0e-6*m); };
 private:
@@ -348,14 +257,8 @@ public:
   inline void transform(LASpoint* point) {
     F64 x = r * ((cosw * point->get_x()) + (sinw * point->get_y())) + tx;
     F64 y = r * ((cosw * point->get_y()) - (sinw * point->get_x())) + ty;
-    if (!point->set_x(x))
-    {
-      overflow++;
-    }
-    if (!point->set_y(y))
-    {
-      overflow++;
-    }
+      point->set_x(x);
+      point->set_y(y);
   };
   LASoperationTransformAffine(F64 r, F64 w, F64 tx, F64 ty) { this->r = r; this->w = w; this->cosw = cos(4.84813681109536e-6*w); this->sinw = sin(4.84813681109536e-6*w); this->tx = tx; this->ty = ty; };
 private:
@@ -370,20 +273,8 @@ public:
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
     F64 z = point->get_z();
-    if (z < below)
-    {
-      if (!point->set_z(below))
-      {
-        overflow++;
-      }
-    }
-    else if (z > above)
-    {
-      if (!point->set_z(above))
-      {
-        overflow++;
-      }
-    }
+      if (z < below) point->set_z(below);
+      else if (z > above) point->set_z(above);
   };
   LASoperationClampZ(F64 below, F64 above) { this->below = below; this->above = above; };
 private:
@@ -398,13 +289,7 @@ public:
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
     F64 z = point->get_z();
-    if (z < below)
-    {
-      if (!point->set_z(below))
-      {
-        overflow++;
-      }
-    }
+      if (z < below) point->set_z(below);
   };
   LASoperationClampZbelow(F64 below) { this->below = below; };
 private:
@@ -419,13 +304,7 @@ public:
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_Z; };
   inline void transform(LASpoint* point) {
     F64 z = point->get_z();
-    if (z > above)
-    {
-      if (!point->set_z(above))
-      {
-        overflow++;
-      }
-    }
+      if (z > above) point->set_z(above);
   };
   LASoperationClampZabove(F64 above) { this->above = above; };
 private:
@@ -440,10 +319,7 @@ public:
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_EXTRA_BYTES; };
   inline void transform(LASpoint* point) {
     F64 z = point->get_attribute_as_float(index);
-    if (!point->set_z(z))
-    {
-      overflow++;
-    }
+      point->set_z(z);
   };
   LASoperationCopyAttributeIntoZ(U32 index) { this->index = index; };
 private:
@@ -456,13 +332,8 @@ public:
   inline const CHAR* name() const { return "copy_intensity_into_z"; };
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s ", name()); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_INTENSITY; };
-  inline void transform(LASpoint* point) {
-    F64 intensity = (F64)point->get_intensity();
-    if (!point->set_z(intensity))
-    {
-      overflow++;
-    }
-  };
+
+    inline void transform(LASpoint *point) { point->set_z((F64) point->get_intensity()); };
 };
 
 class LASoperationTranslateRawX : public LASoperation
@@ -729,19 +600,6 @@ private:
   F64 bin_size;
 };
 
-class LASoperationSetScanAngle : public LASoperation
-{
-public:
-  inline const CHAR* name() const { return "set_scan_angle"; };
-  inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s %g ", name(), scan_angle); };
-  inline void transform(LASpoint* point) {
-    point->set_scan_angle(scan_angle);
-  };
-  LASoperationSetScanAngle(F32 scan_angle) { this->scan_angle = scan_angle; };
-private:
-  F32 scan_angle;
-};
-
 class LASoperationScaleScanAngle : public LASoperation
 {
 public:
@@ -1003,7 +861,13 @@ public:
       point->set_extended_classification(class_to);
     }
   };
-  LASoperationClassifyAttributeBetweenAs(U32 index, F64 z_below, F64 z_above, U8 class_to) { this->index = index; this->below = z_below; this->above = z_above; this->class_to = class_to; };
+
+    LASoperationClassifyAttributeBetweenAs(U32 index, F64 z_below, F64 z_above, U8 class_to) {
+        this->index = index;
+        this->below = below;
+        this->above = above;
+        this->class_to = class_to;
+    };
 private:
   U32 index;
   F64 below;
@@ -1153,15 +1017,6 @@ public:
   inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s ", name()); };
   inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CLASSIFICATION; };
   inline void transform(LASpoint* point) { point->set_user_data(point->get_classification() ? point->get_classification() : point->get_extended_classification()); };
-};
-
-class LASoperationCopyClassificationIntoPointSource : public LASoperation
-{
-public:
-  inline const CHAR* name() const { return "copy_classification_into_point_source"; };
-  inline I32 get_command(CHAR* string) const { return sprintf(string, "-%s ", name()); };
-  inline U32 get_decompress_selective() const { return LASZIP_DECOMPRESS_SELECTIVE_CLASSIFICATION; };
-  inline void transform(LASpoint* point) { point->set_point_source_ID(point->get_classification() ? point->get_classification() : point->get_extended_classification()); };
 };
 
 class LASoperationCopyAttributeIntoUserData : public LASoperation
@@ -1740,24 +1595,6 @@ private:
   F64 offset;
 };
 
-void LAStransform::check_for_overflow() const
-{
-  U32 i;
-  for (i = 0; i < num_operations; i++)
-  {
-    if (operations[i]->get_overflow())
-    {
-      CHAR command[256];
-      operations[i]->get_command(command);
-#ifdef _WIN32
-      fprintf(stderr, "WARNING: total of %I64d overflows caused by '%s'\n", operations[i]->get_overflow(), command);
-#else
-      fprintf(stderr, "WARNING: total of  %I64d overflows caused by '%s'\n", operations[i]->get_overflow(), command);
-#endif
-    }
-  }
-}
-
 void LAStransform::clean()
 {
   U32 i;
@@ -1812,7 +1649,6 @@ void LAStransform::usage() const
   fprintf(stderr,"  -copy_attribute_into_intensity 0\n");
   fprintf(stderr,"  -bin_gps_time_into_intensity 0.5\n");
   fprintf(stderr,"Transform scan_angle.\n");
-  fprintf(stderr,"  -set_scan_angle 0.0\n");
   fprintf(stderr,"  -scale_scan_angle 1.944445\n");
   fprintf(stderr,"  -translate_scan_angle -5\n");
   fprintf(stderr,"  -translate_then_scale_scan_angle -0.5 2.1\n");
@@ -1863,7 +1699,6 @@ void LAStransform::usage() const
   fprintf(stderr,"  -split_scanner_channel_from_point_source\n");
   fprintf(stderr,"  -bin_Z_into_point_source 200\n");
   fprintf(stderr,"  -bin_abs_scan_angle_into_point_source 2\n");
-  fprintf(stderr,"  -bin_gps_time_into_point_source 5.0\n");
   fprintf(stderr,"Transform gps_time.\n");
   fprintf(stderr,"  -set_gps_time 113556962.005715\n");
   fprintf(stderr,"  -translate_gps_time 40.50\n");
@@ -2332,35 +2167,6 @@ BOOL LAStransform::parse(int argc, char* argv[])
         add_operation(new LASoperationRotateXZ(angle, rot_center_x, rot_center_z));
         *argv[i]='\0'; *argv[i+1]='\0'; *argv[i+2]='\0'; *argv[i+3]='\0'; i+=3; 
       }
-      else if (strcmp(argv[i],"-rotate_yz") == 0)
-      {
-        if ((i+3) >= argc)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 3 arguments: angle rot_center_y rot_center_z\n", argv[i]);
-          return FALSE;
-        }
-        F64 angle;
-        if (sscanf(argv[i+1], "%lf", &angle) != 1)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 3 arguments: angle rot_center_y rot_center_z but '%s' is no valid angle\n", argv[i], argv[i+1]);
-          return FALSE;
-        }
-        F64 rot_center_y;
-        if (sscanf(argv[i+2], "%lf", &rot_center_y) != 1)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 3 arguments: angle rot_center_y rot_center_z but '%s' is no valid rot_center_y\n", argv[i], argv[i+2]);
-          return FALSE;
-        }
-        F64 rot_center_z;
-        if (sscanf(argv[i+3], "%lf", &rot_center_z) != 1)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 3 arguments: angle rot_center_y rot_center_z but '%s' is no valid rot_center_z\n", argv[i], argv[i+3]);
-          return FALSE;
-        }
-        change_coordinates = TRUE;
-        add_operation(new LASoperationRotateYZ(angle, rot_center_y, rot_center_z));
-        *argv[i]='\0'; *argv[i+1]='\0'; *argv[i+2]='\0'; *argv[i+3]='\0'; i+=3; 
-      }
     }
     else if (strncmp(argv[i],"-clamp_", 7) == 0)
     {
@@ -2653,20 +2459,10 @@ BOOL LAStransform::parse(int argc, char* argv[])
           add_operation(new LASoperationCopyIntensityIntoNIR());
           *argv[i]='\0'; 
         }
-      }
-      else if (strncmp(argv[i],"-copy_classification_", 21) == 0)
-      {
-        if (strcmp(argv[i],"-copy_classification_into_user_data") == 0)
-        {
+      } else if (strcmp(argv[i], "-copy_classification_into_user_data") == 0) {
           add_operation(new LASoperationCopyClassificationIntoUserData());
-          *argv[i]='\0'; 
-        }
-        else if (strcmp(argv[i],"-copy_classification_into_point_source") == 0)
-        {
-          add_operation(new LASoperationCopyClassificationIntoPointSource());
-          *argv[i]='\0'; 
-        }
-      }
+          *argv[i] = '\0';
+      } 
     }
     else if (strncmp(argv[i],"-set_", 5) == 0)
     {
@@ -2836,33 +2632,6 @@ BOOL LAStransform::parse(int argc, char* argv[])
           return FALSE;
         }
         add_operation(new LASoperationSetUserData((U8)value));
-        *argv[i]='\0'; *argv[i+1]='\0'; i+=1; 
-      }
-      else if (strcmp(argv[i],"-set_scan_angle") == 0)
-      {
-        if ((i+1) >= argc)
-        {
-          fprintf(stderr,"ERROR: '%s' need 1 argument: value\n", argv[i]);
-          return FALSE;
-        }
-        F32 value;
-        if (sscanf(argv[i+1], "%g", &value) != 1)
-        {
-          fprintf(stderr,"ERROR: '%s' needs 1 argument: value but '%s' is no valid value\n", argv[i], argv[i+1]);
-          return FALSE;
-        }
-        if (value < -180.0f)
-        {
-          fprintf(stderr,"ERROR: cannot set scan angle because value %g is smaller than -180\n", value);
-          return FALSE;
-        }
-        else if (value > 180.0f)
-        {
-          fprintf(stderr,"ERROR: cannot set scan angle rank because value %g is larger than 180\n", value);
-          return FALSE;
-        }
-
-        add_operation(new LASoperationSetScanAngle(value));
         *argv[i]='\0'; *argv[i+1]='\0'; i+=1; 
       }
       else if (strncmp(argv[i],"-set_point_source", 17) == 0)

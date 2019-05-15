@@ -13,7 +13,7 @@
 
   COPYRIGHT:
 
-    (c) 2007-2019, martin isenburg, rapidlasso - fast tools to catch reality
+    (c) 2007-2017, martin isenburg, rapidlasso - fast tools to catch reality
 
     This is free software; you can redistribute and/or modify it under the
     terms of the GNU Lesser General Licence as published by the Free Software
@@ -24,7 +24,6 @@
 
   CHANGE HISTORY:
 
-    20 March 2019 -- check consistent legacy and extended classification in laszip_write_point()
      7 November 2018 -- assure identical legacy and extended flags in laszip_write_point()
     20 October 2018 -- changed (U8*) to (const U8*) for all out->put___() calls
      5 October 2018 -- corrected 'is_empty' return value in laszip_inside_rectangle()
@@ -2794,13 +2793,7 @@ setup_laszip_items(
 
   // compute offsets (or points item pointers) for data transfer from the point items
 
-  if (laszip_dll->point_items)
-  {
-    delete [] laszip_dll->point_items;
-  }
-
   laszip_dll->point_items = new U8*[laszip->num_items];
-
   if (laszip_dll->point_items == 0)
   {
     sprintf(laszip_dll->error, "could not alloc point_items");
@@ -3033,16 +3026,6 @@ laszip_write_point(
       {
         sprintf(laszip_dll->error, "legacy flags and extended flags are not identical");
         return 1;
-      }
-
-      // make sure legacy classification is zero or identical to extended classification
-      if (laszip_dll->point.classification != 0)
-      {
-        if (laszip_dll->point.classification != laszip_dll->point.extended_classification)
-        {
-          sprintf(laszip_dll->error, "legacy classification %d and extended classification %d are not consistent", laszip_dll->point.classification, laszip_dll->point.extended_classification);
-          return 1;
-        }
       }
     }
 
@@ -3977,11 +3960,6 @@ laszip_read_header(
   }
 
   // create point's item pointers
-  
-  if (laszip_dll->point_items)
-  {
-    delete [] laszip_dll->point_items;
-  }
 
   laszip_dll->point_items = new U8*[laszip->num_items];
 

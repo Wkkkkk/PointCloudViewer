@@ -893,14 +893,10 @@ inline void LASreadItemCompressed_POINT14_v3::read(U8* item, U32& context)
     }
     ((LASpoint14*)last_item)->classification = dec_classification->decodeSymbol(contexts[current_context].m_classification[ccc]);
 
-    // update the legacy copy
+      // legacy copies
     if (((LASpoint14*)last_item)->classification < 32)
     {
       ((LASpoint14*)last_item)->legacy_classification = ((LASpoint14*)last_item)->classification;
-    }
-    else
-    {
-      ((LASpoint14*)last_item)->legacy_classification = 0;
     }
   }
 
