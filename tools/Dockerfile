@@ -4,13 +4,10 @@ LABEL description="Builder of sample project on Ubuntu"
 #environment variables
 ENV PROJECT_DIR="/project" \
     BUILD_TYPE=RELEASE \
-    BOOST_USE_STATIC_LIBS=ON \
     CMAKE_VERSION=3.13.3 \
     PATH=/opt/cmake/bin:${PATH} \
-    CMAKE_PREFIX_PATH=/usr/local/include:${CMAKE_PREFIX_PATH} \
-    LD_LIBRARY=/usr/local/lib64:${LD_LIBRARY}
-
-ADD ["start.sh", "/app/"]
+    CMAKE_PREFIX_PATH=/usr/local/lib:/usr/local/lib64:${CMAKE_PREFIX_PATH} \
+    LD_LIBRARY=/usr/local/lib:/usr/local/lib64:${LD_LIBRARY}
 
 #basic dependencies.
 #compile dependencies
@@ -45,10 +42,6 @@ RUN mkdir -p /opt &&\
     mv -f /opt/cmake-${CMAKE_VERSION}-Linux-x86_64 /opt/cmake
 
 #boost1.68
-#RUN add-apt-repository ppa:mhier/libboost-latest && \
-#    apt-get update && \
-#    apt-get install -y \
-#    libboost1.68-dev
 WORKDIR /3rdparty
 RUN wget -O boost_1_68_0.tar.gz https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz &&\
     tar xzvf boost_1_68_0.tar.gz &&\
@@ -57,28 +50,35 @@ RUN wget -O boost_1_68_0.tar.gz https://dl.bintray.com/boostorg/release/1.68.0/s
     ./b2 &&\
     ./b2 install
 
-#protobuf qt
-RUN apt-get install -y \
+#protobuf qt ssh eigen yaml-cpp
+RUN apt-get update && apt-get install -y \
     libprotobuf-dev \
     protobuf-compiler \
     qt5-default \
     qttools5-dev-tools \
-    libqt5opengl5-dev
-
-#clean up
-RUN rm -rf /var/lib/apt/lists/* &&\
-    chmod u+x /app/start.sh &&\
-    mkdir /project &&\
-    mkdir /build
+    libqt5opengl5-dev \
+    libssh-dev \
+    libeigen3-dev \
+    libyaml-cpp-dev
 
 WORKDIR /3rdparty
-#osg
+#osg(dynamic)
 RUN git clone https://github.com/openscenegraph/OpenSceneGraph.git && \
     cd OpenSceneGraph && mkdir build && cd build \
     && cmake .. && make -j6 && make install
 
-VOLUME ["/project", "/build"]
+#draco(static)
+RUN git clone https://github.com/google/draco.git && \
+    cd draco && mkdir build && cd build \
+    && cmake .. && make -j6 && make install
 
-WORKDIR /build
+#clean up
+RUN rm -rf /var/lib/apt/lists/* &&\
+    chmod u+x /app/start.sh &&\
+    mkdir /project
 
+ADD ["start.sh", "/app/"]
+VOLUME ["/project"]
+
+WORKDIR /project/build
 ENTRYPOINT ["/app/start.sh"]

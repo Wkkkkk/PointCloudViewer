@@ -1,5 +1,5 @@
 %YAML:1.0
-
+---
 # server config
 plane_id: 1
 video_url: rtmp://58.200.131.2:1935/livetv/gxtv
@@ -29,3 +29,4 @@ lidar_y: 0
 lidar_z: 0.02571
 lidar_delay: 30
 lidar_period: 80
+...

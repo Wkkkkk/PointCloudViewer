@@ -3,7 +3,7 @@ services:
   protype:
     image: protype_env:latest
     volumes:
-      - /home/zhihui/workspace/protype:/project:ro
+      - /home/zhihui/workspace/protype:/project
       - /home/zhihui/workspace/protype/build:/build
     networks:
       - default
