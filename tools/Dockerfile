@@ -72,12 +72,12 @@ RUN git clone https://github.com/google/draco.git && \
     cd draco && mkdir build && cd build \
     && cmake .. && make -j6 && make install
 
+ADD ["start.sh", "/app/"]
 #clean up
 RUN rm -rf /var/lib/apt/lists/* &&\
     chmod u+x /app/start.sh &&\
     mkdir /project
 
-ADD ["start.sh", "/app/"]
 VOLUME ["/project"]
 
 WORKDIR /project/build
