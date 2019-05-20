@@ -11,22 +11,25 @@ remote_public_server_ip: 192.168.0.254
 remote_public_server_port: 9123
 
 # airplane config
-ip_address: 192.168.0.153
-usr_name: zhihui
-password: 123456
-connect_bash_file_path: ls
-start_bash_file_path: ~/start.sh
-end_bash_file_path: ~/end.sh
-
-points_file: /points.bin
-pose_file: /pose.txt
-cloud_out: /outcloud.las
-lidar_yaw: 0
-lidar_pitch: 90
-lidar_roll: 0
-lidar_x: -0.5
-lidar_y: 0
-lidar_z: 0.02571
-lidar_delay: 30
-lidar_period: 80
+ip_address: 192.168.137.101
+usr_name: nvidia
+password: nvidia
+connect_bash: ls
+start_bash_file_path: ~/zhkj_uav/sensorfusion_ub.sh
+record_bash_file_path: ~/zhkj_uav/sensorfusion_record.sh
+end_bash_file_path: ~/zhkj_uav/sensor_stop.sh
+shutdown_bash: poweroff
+line_id: [1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+points_file: /lidar.laz
+pose_file: /test.txt
+cloud_out: /outcloud_ie
+lidar_yaw: 176.7838
+lidar_pitch: -0.846
+lidar_roll: -89.856
+lidar_x: 0.04
+lidar_y: 0.105
+lidar_z: -0.008
+lidar_delay: 0
+lidar_period: 5000
+lidar_time_offset: 0.00
 ...

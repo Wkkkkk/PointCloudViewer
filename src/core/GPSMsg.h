@@ -43,10 +43,10 @@ typedef struct GpsMsgs {
     int heading_state;
     bool gps_lock;
     bool kinetic_alignment;
-    bool lidar_time; //???????
+    bool lidar_time;
     uint64_t gps_time;
 
-    double ref_x, ref_y, ref_z; //utm???
+    double ref_x, ref_y, ref_z; //utm
 } GpsMsgs_t;
 #pragma pack()
 

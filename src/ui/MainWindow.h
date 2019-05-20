@@ -80,6 +80,7 @@ private:
     QAction *start_action_;
     QAction *record_action_;
     QAction *end_action_;
+    QAction *shutdown_action_;
     QAction *convert_action_;
 
     // advanced buttons
@@ -98,6 +99,7 @@ private:
     std::string start_cmd_;
     std::string record_cmd_;
     std::string end_cmd_;
+    std::string shutdown_cmd_;
 signals:
     void test_signal();
 
@@ -123,6 +125,8 @@ private slots:
     void recordTriggered();
 
     void endTriggered();
+
+    void shutdownTriggered();
 
     void convertTriggered();
 

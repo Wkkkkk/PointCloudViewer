@@ -93,6 +93,10 @@ void MainWindow::createMenu() {
     end_action_->setIcon(QIcon(":/images/end.png"));
     connect(end_action_, &QAction::triggered, this, &MainWindow::endTriggered);
 
+    shutdown_action_ = new QAction(tr("Shutdown"), this);
+    shutdown_action_->setIcon(QIcon(":/images/shutdown.png"));
+    connect(shutdown_action_, &QAction::triggered, this, &MainWindow::shutdownTriggered);
+
     convert_action_ = new QAction(tr("Convert"), this);
     convert_action_->setIcon(QIcon(":/images/convert.png"));
     connect(convert_action_, &QAction::triggered, this, &MainWindow::convertTriggered);
@@ -131,6 +135,7 @@ void MainWindow::createToolBar() {
     toolBar->addAction(start_action_);
     toolBar->addAction(record_action_);
     toolBar->addAction(end_action_);
+    toolBar->addAction(shutdown_action_);
     toolBar->addAction(convert_action_);
     toolBar->addSeparator();
 
@@ -287,10 +292,11 @@ void MainWindow::initConfig() {
     init(ip_address_, "ip_address");
     init(usr_name_, "usr_name");
     init(password_, "password");
-    init(connect_cmd_, "connect_bash_file_path");
+    init(connect_cmd_, "connect_bash");
     init(start_cmd_, "start_bash_file_path");
     init(record_cmd_, "record_bash_file_path");
     init(end_cmd_, "end_bash_file_path");
+    init(shutdown_cmd_, "shutdown_bash");
 }
 
 void MainWindow::connectTriggered() {
@@ -338,6 +344,15 @@ void MainWindow::endTriggered() {
     }
 }
 
+void MainWindow::shutdownTriggered() {
+    int result = execute_ssh_cmd(ip_address_.c_str(), usr_name_.c_str(), password_.c_str(), shutdown_cmd_.c_str());
+    if (result == 0) {
+        QMessageBox::information(nullptr, tr("Info"), tr("Shutdown successfully"), QMessageBox::Yes);
+
+        enableButtons(false);
+    }
+}
+
 void MainWindow::convertTriggered() {
     QUrl dir_path = QFileDialog::getExistingDirectoryUrl(nullptr, tr("PointCould Import Directory"));
     if (dir_path.isEmpty())
@@ -345,12 +360,12 @@ void MainWindow::convertTriggered() {
 
     auto dlg = new QProgressDialog;
     dlg->setWindowTitle(tr("Convert"));
-    dlg->setLabelText(tr("Converting....."));
+    dlg->setLabelText(tr("Converting..."));
     dlg->setCancelButton(nullptr);
-    dlg->setRange(0, 0);  //always busy
+    dlg->setRange(0, 100);  //always busy
 
-    FileConvertThread *workerThread = new FileConvertThread(dir_path.toLocalFile());
-    //connect(workerThread, &fileConvertThread::progress_value, dlg, &QProgressDialog::setValue);
+    auto workerThread = new FileConvertThread(dir_path.toLocalFile());
+    connect(workerThread, &FileConvertThread::progress_value, dlg, &QProgressDialog::setValue);
     connect(workerThread, &FileConvertThread::finished, workerThread, &QObject::deleteLater);
     connect(workerThread, &FileConvertThread::finished, dlg, &QProgressDialog::close);
     workerThread->start();

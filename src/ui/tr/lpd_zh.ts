@@ -11,12 +11,12 @@
     <message>
         <location filename="../MainWindow.cpp"/>
         <source>Load</source>
-        <translation>加载</translation>
+        <translation>加载地形</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp"/>
         <source>Receive</source>
-        <translation>接收</translation>
+        <translation>接收数据</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp"/>
@@ -58,5 +58,76 @@
         <source>status</source>
         <translation>状态</translation>
     </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Connect</source>
+        <translation>连接设备</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Start</source>
+        <translation>开始</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Record</source>
+        <translation>记录</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Shutdown</source>
+        <translation>关闭设备</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Convert</source>
+        <translation>数据转换</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Info</source>
+        <translation>提示</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Connect successfully</source>
+        <translation>连接成功</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Connect failed</source>
+        <translation>连接失败</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Close successfully</source>
+        <translation>关闭成功</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Shutdown successfully"</source>
+        <translation>关机成功</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>PointCould Import Directory</source>
+        <translation>点云数据文件夹</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Convert</source>
+        <translation>转换</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp"/>
+        <source>Converting...</source>
+        <translation>正在转换...</translation>
+    </message>
+
 </context>
 </TS>

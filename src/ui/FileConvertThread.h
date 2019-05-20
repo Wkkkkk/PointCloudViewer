@@ -20,19 +20,24 @@
 #ifndef PROTYPE_FILECONVERT_H
 #define PROTYPE_FILECONVERT_H
 
+#include <QtCore/QScopedPointer>
 #include <QtCore/QThread>
 
+class FileConvertPrivate;
 class FileConvertThread : public QThread {
 Q_OBJECT
 public:
     explicit FileConvertThread(const QString &file_dir_path);
 
+    ~FileConvertThread() final;
+
     void run() override;
 
 private:
     QString file_dir_path_;
-signals:
+    QScopedPointer<FileConvertPrivate> const d_ptr;
 
+signals:
     void progress_value(int);
 };
 
