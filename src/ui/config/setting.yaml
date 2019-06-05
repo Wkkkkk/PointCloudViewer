@@ -1,35 +1,43 @@
 %YAML:1.0
 ---
+# <huoyan
+# check config
+valid_min_range: 20.0
+valid_max_range: 70.0
+max_height_diff: 10.0
+points_density: 0.001
 # server config
 plane_id: 1
 video_url: rtmp://58.200.131.2:1935/livetv/gxtv
-pointcloud_port: 9696
-statusinfo_port: 9697
 dsm_file_path: ./data/output/dsm.ive
 building_file_path: ./data/buildings/indexs.txt
-remote_public_server_ip: 192.168.0.254
+remote_public_server_ip: 111.231.59.3
 remote_public_server_port: 9123
+# end>
 
 # airplane config
+pointcloud_port: 9696
+statusinfo_port: 9697
 ip_address: 192.168.137.101
 usr_name: nvidia
 password: nvidia
-connect_bash: ls
+connect_bash_file_path: ls
 start_bash_file_path: ~/zhkj_uav/sensorfusion_ub.sh
 record_bash_file_path: ~/zhkj_uav/sensorfusion_record.sh
 end_bash_file_path: ~/zhkj_uav/sensor_stop.sh
-shutdown_bash: poweroff
-line_id: [1,2,3,4,6,7,8,9,10,12,13,14,15,16,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
-points_file: /lidar.laz
-pose_file: /test.txt
-cloud_out: /outcloud_ie
-lidar_yaw: 176.7838
-lidar_pitch: -0.846
-lidar_roll: -89.856
+shutdown_bash: ~/zhkj_uav/sensor_poweroff.sh
+
+line_id: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+min_distance: 1.5
+points_file: /lidar.las
+pose_file: /pose_ie.txt
+cloud_out: /outcloud.las
+lidar_yaw: 177.4498
+lidar_pitch: -1.7856
+lidar_roll: -90.04289
 lidar_x: 0.04
 lidar_y: 0.105
 lidar_z: -0.008
 lidar_delay: 0
-lidar_period: 5000
-lidar_time_offset: 0.00
+lidar_period: 1000
 ...

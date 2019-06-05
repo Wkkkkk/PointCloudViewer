@@ -43,9 +43,12 @@ public:
 private:
     QScopedPointer<QUdpSocket> socket_;
     const MODE mode_;
+
 Q_SIGNALS:
 
     void emitPointCloud();
+
+	void emitRefPos(Point);
 
     void emitUAVPos(Point);
 

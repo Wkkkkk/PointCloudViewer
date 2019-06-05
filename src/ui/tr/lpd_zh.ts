@@ -16,7 +16,7 @@
     <message>
         <location filename="../MainWindow.cpp"/>
         <source>Receive</source>
-        <translation>接收数据</translation>
+        <translation>比对</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp"/>

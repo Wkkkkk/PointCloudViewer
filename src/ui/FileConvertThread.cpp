@@ -53,11 +53,15 @@ public:
             outposs->timestamp = (uint64_t) (timestamp * 1e9);
             outposs->q = q;
             poseQue.push_back(outposs);
-            //        std::cout << outposs->p[0] << outposs->p[1] << outposs->p[2]<< std::endl;
         }
+		if (poseQue.empty()) {
+			std::cerr << "invalid pose file: " << pose_file << std::endl;
+			return;
+		}
         poseQue.pop_back();
         poseFS.close();
         utm_offset = poseQue.front()->p;
+		std::cout << "found pose num: "<< poseQue.size() << std::endl;
     }
 
     POSSMeas::Ptr poseInterpolation(uint64_t timestamp) {
@@ -138,6 +142,7 @@ public:
             PointT_t point_t;
             uint64_t time;
             unsigned int index = 0;
+			int count[3] = { 0, 0, 0 };
 
             while (lasreader->read_point()) {
                 point_t.i = (uint8_t) lasreader->point.get_intensity();
@@ -147,6 +152,8 @@ public:
                 point_t.y = (float) lasreader->point.get_y();
                 point_t.z = (float) lasreader->point.get_z();
                 if (fabs(point_t.x) + fabs(point_t.y) + fabs(point_t.z) < min_distance) {
+					count[0]++;
+					//std::cout << "too close" << std::endl;
                     continue;
                 }
 
@@ -156,16 +163,18 @@ public:
                         if (point_t.timestamp >= time_max) {
                             break;
                         }
+						count[1]++;
                         //std::cout << "point not in period" << std::endl;
                         continue;
                     }
                     Eigen::Vector3d point_lidar(point_t.x, point_t.y, point_t.z);
                     POSSMeas::Ptr pose = poseInterpolation(point_t.timestamp);
                     if (pose == nullptr) {
-//                        std::cout << point_t.timestamp << " no pose" << std::endl;
+						count[2]++;
+						//std::cout << point_t.timestamp << " no pose" << std::endl;
                         continue;
                     }
-                    //            std::cout << point_t.timestamp << std::endl;
+                    //std::cout << point_t.timestamp << std::endl;
                     if (point_t.timestamp < time) {
                         std::cout << "point time err" << std::endl;
                     }
@@ -176,7 +185,7 @@ public:
                     laspoint.set_z(trans_point[2]);
                     laspoint.set_intensity(point_t.i);
                     laspoint.set_point_source_ID(point_t.r);
-                    laspoint.set_gps_time(point_t.timestamp);
+                    laspoint.set_gps_time((double)point_t.timestamp * 1e-9);
                     laswriter->write_point(&laspoint);
                     laswriter->update_inventory(&laspoint);
                     time = point_t.timestamp;
@@ -185,11 +194,15 @@ public:
                 // increment & optional post
                 index++;
                 if (index % 10000 == 0) {
-                    int value = index * 100 / points_num;
+                    int value = static_cast<double>(index) / points_num * 100;
                     callback(value);
                 }
             }
-            std::cout << "total added points num: " << index << std::endl;
+
+			std::cout << "point too close num: " << count[0] << std::endl;
+			std::cout << "point not in period: " << count[1] << std::endl;
+			std::cout << "point without pose : " << count[2] << std::endl;
+            std::cout << "valid points num   : " << index << std::endl;
             laswriter->update_header(&lasheader, TRUE);
             I64 total_bytes = laswriter->close();
         }
@@ -245,6 +258,7 @@ public:
         readPose(pose_file);
         uint64_t time_min = poseQue.front()->timestamp + (uint64_t) (lidar_delay * 1e9);
         uint64_t time_max = time_min + (uint64_t) (lidar_period * 1e9);
+		std::cout << "pose_file: " << pose_file << std::endl;
         std::cout << "points_file: " << points_file << std::endl;
         std::cout << "out_file: " << out_file << std::endl;
         writeLasFromPointCloud(points_file.c_str(), out_file.c_str(), time_min, time_max,

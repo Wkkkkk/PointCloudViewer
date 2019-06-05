@@ -76,17 +76,24 @@ void NetworkReceiver::getDracoPointCloudData() {
             std::cout << "get a decode error" << std::endl;
             return;
         }
-        draco_point_cloud.reset(statusor.value().get());
-        //draco_point_cloud = std::move(statusor).value();
+        //draco_point_cloud.reset(statusor.value().get());
+        draco_point_cloud = std::move(statusor).value();
         if (!draco_point_cloud) {
             std::cout << "Failed to decode the input file" << std::endl;
             return;
         }
-    }
+	}
+	else {
+		std::cerr << "get a wrong geometry type: " << geom_type << std::endl;
+	}
     auto num_points = draco_point_cloud->num_points();
-    //std::cout << "convert draco to pcd, point num: " << num_points << std::endl;
+    std::cout << "convert draco to pcd, point num: " << num_points << std::endl;
 
     auto pc_att = draco_point_cloud->GetNamedAttribute(draco::GeometryAttribute::POSITION);
+	if (!pc_att) {
+		std::cerr << "get a wrong geometry attribute" << std::endl;
+		return;
+	}
 
     float att_val[3];
 
@@ -95,9 +102,12 @@ void NetworkReceiver::getDracoPointCloudData() {
     for (draco::AttributeValueIndex i(0); i < pc_att->size(); ++i) {
         pc_att->GetValue(i, att_val);
 
-        //if(i.value() % 500 == 0) std::cout << i.value() << ": " << att_val[0] << " " << att_val[1] << " " << att_val[2] << std::endl;
-        points.push_back(Point(att_val[0], att_val[1], att_val[2]));
+		Point off_set = Point(att_val[0], att_val[1], att_val[2]);
+		if (i.value() % 500 == 0)  std::cout << "point---->offset: " << off_set << std::endl;
+
+        points.push_back(off_set);
     }
+	std::cout << "convert to Array, point num: " << points.size() << std::endl;
 
     //update
     core::Singleton<Array>::getInstance().update(std::move(points));
@@ -117,10 +127,14 @@ void NetworkReceiver::getStatusInfo() {
     GpsMsgs status_info;
     memcpy(&status_info, udp_buffer, sizeof(GpsMsgs));
 
+	//固定点坐标
     Point origin(status_info.ref_x, status_info.ref_y, status_info.ref_z);
+	//飞机相对固定点的位移
     Point offset(status_info.x, status_info.y, status_info.z);
-    Point uav_pos = origin + offset;
-    //std::cout << "uav_pos: " << uav_pos << std::endl;
+	//飞机的绝对坐标
+	Point uav_pos = origin + offset;
+	
+	emit emitRefPos(origin);
     emit emitUAVPos(uav_pos);
 
     Point gps_loc(status_info.lat, status_info.lon, status_info.hei);

@@ -42,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
         pointcloud_manager_(new NetworkReceiver("PointCloud Receiver", NetworkReceiver::MODE::POINTCLOUD)),
         statusinfo_manager_(new NetworkReceiver("StatusInfo Receiver", NetworkReceiver::MODE::STATUSINFO)) {
 
-    this->setWindowTitle("Lidar receiver");
+    this->setWindowTitle("Lidar");
 
     osgwidget_ = new OSGWidget(this);
     this->setCentralWidget(osgwidget_);
@@ -111,8 +111,8 @@ void MainWindow::createMenu() {
 
     start_trace_action_ = new QAction(tr("Receive"), this);
     start_trace_action_->setIcon(QIcon(":/images/plane.png"));
-    start_trace_action_->setCheckable(false);
-    connect(open_dsm_action_, &QAction::toggled, this, &MainWindow::activeTraceRefresh);
+    start_trace_action_->setCheckable(true);
+    connect(start_trace_action_, &QAction::toggled, this, &MainWindow::activeTraceRefresh);
 
     test_trace_action_ = new QAction(tr("Test"), this);
     test_trace_action_->setIcon(QIcon(":/images/setup.png"));
@@ -142,7 +142,7 @@ void MainWindow::createToolBar() {
 #ifdef BUILD_FOR_BUILDING_DETECT
     toolBar->addAction(open_dsm_action_);
     toolBar->addAction(start_trace_action_);
-    toolBar->addAction(test_trace_action_);
+    //toolBar->addAction(test_trace_action_);
 #endif
 }
 
@@ -203,6 +203,7 @@ void MainWindow::createDockWidget() {
 }
 
 void MainWindow::createConnect() {
+	connect(statusinfo_manager_.data(), &NetworkReceiver::emitRefPos, osgwidget_, &OSGWidget::updateRefPose);
     connect(statusinfo_manager_.data(), &NetworkReceiver::emitUAVPos, osgwidget_, &OSGWidget::updateUAVPose);
     connect(statusinfo_manager_.data(), &NetworkReceiver::emitGPSLocation, this, &MainWindow::updateGPSLocation);
     connect(statusinfo_manager_.data(), &NetworkReceiver::emitSatelliteNum, this, &MainWindow::updateSatelliteNum);
@@ -220,13 +221,20 @@ void MainWindow::updateGPSLocation(Point p) {
     auto location_item = tree_widget_->topLevelItem(GPS_LOCATION);
 
     if (!location_item->childCount()) {
-        auto item = new QTreeWidgetItem(location_item);
+        auto item1 = new QTreeWidgetItem(location_item);
+		auto item2 = new QTreeWidgetItem(location_item);
+		auto item3 = new QTreeWidgetItem(location_item);
     }
+	QStringList text_str_list;
+	text_str_list << "lat:" + QString::number(p.x(), 'f', 6);
+	text_str_list << "lon:" + QString::number(p.y(), 'f', 6);
+	text_str_list << "hei:" + QString::number(p.z(), 'f', 3);
 
-    auto item = location_item->child(0);
-    item->setText(0, "lat:" + QString::number(p.x(), 'f', 6));
-    item->setText(1, "lon:" + QString::number(p.y(), 'f', 6));
-    item->setText(2, "hei:" + QString::number(p.z(), 'f', 3));
+	for (size_t i = 0; i < location_item->childCount(); i++)
+	{
+		auto item = location_item->child(i);
+		item->setText(0, text_str_list[i]);
+	}
 }
 
 void MainWindow::updateSatelliteNum(QString num) {
@@ -269,11 +277,19 @@ void MainWindow::updateLidarNormnal(bool is_valid) {
 }
 
 void MainWindow::loadFiles() {
+	auto convert = [](const std::string& file_path) -> std::string {
+		QString file_path_str = QString::fromStdString(file_path);
+		QFileInfo file(file_path_str);
+
+		std::string ab_file_path = file.absoluteFilePath().toStdString();
+		std::cout << file.exists() << " open: " << ab_file_path << std::endl;
+		return ab_file_path;
+	};
     auto dsm_file_path = Config::get<std::string>("dsm_file_path", "./data/output/dsm.ive");
     auto building_file_path = Config::get<std::string>("building_file_path", "./data/buildings/indexs.txt");
-
-    osgwidget_->loadDSM(dsm_file_path);
-    osgwidget_->loadBuildings(building_file_path);
+	
+	osgwidget_->loadDSM(convert(dsm_file_path));
+	osgwidget_->loadBuildings(convert(building_file_path));
 }
 
 void MainWindow::activeTraceRefresh(bool is_active) {

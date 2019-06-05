@@ -114,8 +114,12 @@ private:
 
     void finishTraceRefresh();
 
+	void setBuildingColor(const osg::Vec3d& color);
+
     //! create hud node
     osg::Camera *createHUD();
+
+	osg::Geode *createSphere(const osg::Vec4& color, double radius);
 
     /**
      * @brief calculate the bounding box of a node
@@ -145,12 +149,14 @@ private:
     osg::ref_ptr<osg::Switch> text_node_;
 
     std::vector<osg::Vec3d> trace_vec_;
+	Point ref_position;
     Point cur_position;
     Array cur_points;
 
     bool is_testing_;
     QScopedPointer<QTimer> update_timer_;
     QScopedPointer<QUdpSocket> udp_socket_;
+	osg::ref_ptr<osg::Geometry> current_buildin_geom;
 
     //! some manipulators
     osg::ref_ptr<osgGA::TrackballManipulator> _trackballMani;
@@ -165,7 +171,9 @@ public slots:
 
     void updateScene();
 
-    void updateUAVPose(osg::Vec3d);
+    void updateUAVPose(Point);
+
+	void updateRefPose(Point);
 
     void updatePointCloud();
 };

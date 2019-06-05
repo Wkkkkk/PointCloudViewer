@@ -33,9 +33,11 @@
 #include <QtCore/QJsonDocument>
 
 #include <osg/Timer>
+#include <osg/Point>
 #include <osg/Geometry>
 #include <osg/Material>
 #include <osg/LineWidth>
+#include <osg/BlendFunc>
 #include <osg/PolygonMode>
 #include <osg/ShapeDrawable>
 #include <osg/MatrixTransform>
@@ -52,14 +54,15 @@
 #include "Singleton.h"
 #include "NodeCallback.h"
 #include "NodeTreeInfo.h"
+#include "CleanHandler.h"
 #include "NodeTreeSearch.h"
 #include "CoorConv.hpp"
 
 using namespace osgHelper;
 
-osg::Vec3d utm2llh(const osg::Vec3d &enu) {
+osg::Vec3d utm2llh(const osg::Vec3d &enu, int zone = 50) {
     WGS84Corr latlon;
-    UTMXYToLatLon(enu.x(), enu.y(), 50, false, latlon);
+    UTMXYToLatLon(enu.x(), enu.y(), zone, false, latlon);
 
     return {RadToDeg(latlon.lat), RadToDeg(latlon.log), enu.z()};
 }
@@ -82,7 +85,7 @@ OSGWidget::OSGWidget(QWidget *parent, Qt::WindowFlags f)
 
 void OSGWidget::init() {
     initSceneGraph();
-    initHelperNode();
+    //initHelperNode();
     initCamera();
 
     initTrace();
@@ -110,23 +113,35 @@ void OSGWidget::initSceneGraph() {
     osg::ref_ptr<osg::PositionAttitudeTransform> uav_node = new osg::PositionAttitudeTransform;
     uav_node->setName(uav_node_name);
     {
+#ifdef BUILD_FOR_BUILDING_DETECT
         osg::ref_ptr<osg::Node> plane = osgDB::readNodeFile("./model/uav.osgb");
         if (plane.valid()) {
             osg::ref_ptr<osg::MatrixTransform> mt_node = new osg::MatrixTransform;
-            mt_node->setMatrix(osg::Matrixd::scale(0.1, 0.1, 0.1));
+            mt_node->setMatrix(osg::Matrixd::scale(0.01, 0.01, 0.01));
 
             mt_node->addChild(plane);
             uav_node->addChild(mt_node);
-        } else {
-            osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-            geode->setName("UAV");
 
-            osg::ref_ptr<osg::ShapeDrawable> point_sphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3d(), 0.5f));
-            point_sphere->setColor(osg::Vec4(1.0, 1.0, 0.0, 1.0));
-            geode->addDrawable(point_sphere);
+			{
+				double valid_min_range = Config::get<double>("valid_min_range", 20.0);
+				double valid_max_range = Config::get<double>("valid_max_range", 100.0);
 
-            uav_node->addChild(geode);
-        }
+				osg::ref_ptr<osg::MatrixTransform> trans = new osg::MatrixTransform;
+				trans->addChild(createSphere(osg::Vec4(0.0f, 1.0f, 1.0f, 0.1f), valid_max_range));
+				trans->addChild(createSphere(osg::Vec4(0.0f, 0.0f, 1.0f, 0.3f), valid_min_range));
+				uav_node->addChild(trans);
+			}
+        } 
+#else
+        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+        geode->setName("UAV");
+
+        osg::ref_ptr<osg::ShapeDrawable> point_sphere = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3d(), 0.5f));
+        point_sphere->setColor(osg::Vec4(1.0, 1.0, 0.0, 1.0));
+        geode->addDrawable(point_sphere);
+
+        uav_node->addChild(geode);
+#endif
     }
     root_node_->addChild(uav_node);
 
@@ -179,6 +194,7 @@ void OSGWidget::initCamera() {
     _viewer->addEventHandler(new osgViewer::StatsHandler);
     _viewer->addEventHandler(new osgGA::StateSetManipulator(camera->getStateSet()));
     _viewer->addEventHandler(new NodeTreeHandler(root_node_));
+	_viewer->addEventHandler(new CleanHandler(root_node_));
 
     //for outline effects
     {
@@ -258,6 +274,26 @@ osg::Camera *OSGWidget::createHUD() {
     camera->setAllowEventFocus(false);
 
     return camera.release();
+}
+
+osg::Geode * OSGWidget::createSphere(const osg::Vec4& color, double radius)
+{
+	osg::ref_ptr<osg::ShapeDrawable> shape =
+		new osg::ShapeDrawable(new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), radius));
+	shape->setColor(color);
+
+	osg::StateSet* stateset = shape->getOrCreateStateSet();
+
+	osg::ref_ptr<osg::BlendFunc> blendFunc = new osg::BlendFunc();  // blend func      
+	blendFunc->setSource(osg::BlendFunc::SRC_ALPHA);
+	blendFunc->setDestination(osg::BlendFunc::ONE_MINUS_SRC_ALPHA);
+	stateset->setAttributeAndModes(blendFunc);
+	stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+	osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+	geode->addDrawable(shape.get());
+
+	return geode.release();
 }
 
 void OSGWidget::readDataFromFile(const QFileInfo &file_info) {
@@ -533,10 +569,44 @@ void OSGWidget::updateUAVPose(Point position) {
             NodeTreeSearch::findNodeWithName(root_node_, uav_node_name));
 
     cur_position = position;
+
     // update model
     {
-        uav_node->setPosition(cur_position);
+        uav_node->setPosition(position);
     }
+
+	//update text
+	{
+		std::stringstream ss;
+		ss << cur_position;
+		std::string position_str = ss.str();
+
+		text_node_->removeChildren(0, text_node_->getNumChildren());
+
+		osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+		geode->setName(positon_geode_name);
+		// turn lighting off for the text and disable depth test to ensure it's always on top.
+		osg::ref_ptr<osg::StateSet> state_set = geode->getOrCreateStateSet();
+		state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+		//position
+		{
+			osg::Vec3 loc(20.0f, 20.0f, 0.0f);
+
+			osg::ref_ptr<osgText::Text> text = new osgText::Text;
+			geode->addDrawable(text);
+
+			text->setPosition(loc);
+			text->setCharacterSize(20);
+			text->setText("UAV Pos: " + position_str);
+		}
+		text_node_->addChild(geode);
+	}
+}
+
+void OSGWidget::updateRefPose(Point point)
+{
+	ref_position = point;
 }
 
 void OSGWidget::updatePointCloud() {
@@ -551,8 +621,10 @@ void OSGWidget::updatePointCloud() {
     osg::ref_ptr<osg::Vec3Array> colors = new osg::Vec3Array;
 
     for (const auto &point : cur_points) {
-        vertices->push_back(point);
-        colors->push_back(calculateColorForPoint(point));
+		//点云的绝对坐标
+		Point ab_point = point + ref_position;
+        vertices->push_back(ab_point);
+        colors->push_back(calculateColorForPoint(ab_point));
     }
 
     geom->setVertexArray(vertices);
@@ -563,8 +635,10 @@ void OSGWidget::updatePointCloud() {
     geode->addDrawable(geom);
     point_cloud_node->addChild(geode);
 
-    if (point_cloud_node->getNumChildren() >= 10) {
-        point_cloud_node->removeChildren(0, 3);
+	const int max_node_count = 1000;
+	const int node_range = 100;
+    if (point_cloud_node->getNumChildren() >= max_node_count) {
+        point_cloud_node->removeChildren(0, node_range);
     }
 }
 
@@ -578,9 +652,10 @@ osg::Vec3d OSGWidget::calculateColorForPoint(const osg::Vec3d &point) const {
              osg::Vec3(1.0, 0.8, 0.0), osg::Vec3(1.0, 0.6, 0.0),
              osg::Vec3(1.0, 0.4, 0.0), osg::Vec3(1.0, 0.2, 0.0), osg::Vec3(1.0, 0.0, 0.0)
             };
-    const int height_range = 5;
+    const int height_range = 10;
 
-    double height = std::abs(point.z() - cur_position.z());
+	//根据点的高程来赋色
+    double height = std::abs(point.z() - ref_position.z());
     int range = static_cast<int>(height) / height_range;
     if (range >= Colors.size()) range = Colors.size() - 1;
     if (range == 0) range = 1;
@@ -644,13 +719,13 @@ void OSGWidget::loadDSM(const std::string &file_path) {
     dsm_node->addChild(dsm);
 
     osg::BoundingSphere bs = dsm->getBound();
-    std::cout << "dsm center " << bs.center().x() << " "
-              << bs.center().y() << " " << bs.center().z() << std::endl;
+	osg::Vec3d default_position = bs.center();
+    std::cout << "dsm center: " << bs.center() << std::endl;
 
-    _terrainMani->setHomePosition(cur_position + osg::Vec3(0.0, 0.0, 1000.0), cur_position, osg::Vec3(0, 1, 0));
+    _terrainMani->setHomePosition(default_position + osg::Vec3(0.0, 0.0, 1000.0), default_position, osg::Vec3(0, 1, 0));
     _viewer->setCameraManipulator(_terrainMani.get());
 
-    updateUAVPose(cur_position);
+    updateUAVPose(default_position);
 }
 
 void OSGWidget::loadBuildings(const std::string &file_path) {
@@ -734,22 +809,34 @@ void OSGWidget::finishTraceRefresh() {
     update_timer_->stop();
 }
 
+void OSGWidget::setBuildingColor(const osg::Vec3d & color)
+{
+	if (current_buildin_geom.valid())
+	{
+		osg::ref_ptr<osg::Vec3Array> colors = dynamic_cast<osg::Vec3Array *>(current_buildin_geom->getColorArray());
+		auto &default_color = colors->back();
+		default_color.set(color);
+		colors->dirty();
+	}
+}
+
 void OSGWidget::updateScene() {
     std::cout << "---------------updateScene---------------" << std::endl;
 
-    // update position
     if (is_testing_)
     {
         static int i = 0;
-        {
-            if (i >= trace_vec_.size()) i = 0;
-            cur_position = trace_vec_[i++];
-        }
-        std::cout << "cur_position: " << cur_position << " point num: " << cur_points.size() << std::endl;
+
+        if (i >= trace_vec_.size()) i = 0;
+		osg::Vec3d new_position = trace_vec_[i++];
+        std::cout << "cur_position: " << new_position << " point num: " << cur_points.size() << std::endl;
+
+		// update position
+		updateUAVPose(new_position);
     }
 
     // Set the camera to look from its current position to the plane position
-    _viewer->getCamera()->setViewMatrixAsLookAt(cur_position + osg::Vec3d(0, 0, 700), cur_position,
+    _viewer->getCamera()->setViewMatrixAsLookAt(cur_position + osg::Vec3d(0, 0, 1000), cur_position,
                                                 osg::Vec3d(0, 1.0, 0));
 
     //calculate intersection for current dsm height and building id
@@ -758,45 +845,18 @@ void OSGWidget::updateScene() {
     //match the point cloud data
     pointCloudMatch(result);
 
+	//change color
+	if (result.build_id > 0 && result.is_illegal)
+	{
+		setBuildingColor(osg::Vec3d(0.0, 1.0, 0.0));
+	}
+
     postResult(result);
 }
 
 Result OSGWidget::intersectionCheck() {
     static osg::ref_ptr<osg::PositionAttitudeTransform> model_node =
             dynamic_cast<osg::PositionAttitudeTransform *>(NodeTreeSearch::findNodeWithName(root_node_, uav_node_name));
-
-    // update model
-    {
-        model_node->setPosition(cur_position);
-    }
-
-    //update text
-    {
-        std::stringstream ss;
-        ss << cur_position;
-        std::string position_str = ss.str();
-
-        text_node_->removeChildren(0, text_node_->getNumChildren());
-
-        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-        geode->setName(positon_geode_name);
-        // turn lighting off for the text and disable depth test to ensure it's always on top.
-        osg::ref_ptr<osg::StateSet> state_set = geode->getOrCreateStateSet();
-        state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-
-        //position
-        {
-            osg::Vec3 loc(20.0f, 20.0f, 0.0f);
-
-            osg::ref_ptr<osgText::Text> text = new osgText::Text;
-            geode->addDrawable(text);
-
-            text->setPosition(loc);
-            text->setCharacterSize(20);
-            text->setText("UAV Pos: " + position_str);
-        }
-        text_node_->addChild(geode);
-    }
 
     // intesection check
     osg::Vec3d start = cur_position;
@@ -841,10 +901,7 @@ Result OSGWidget::intersectionCheck() {
                         osg::ref_ptr<osg::Geometry> geom = dynamic_cast<osg::Geometry *>(drawable.get());
                         geom->setUseDisplayList(false);
                         geom->setUseVertexBufferObjects(true);
-                        osg::ref_ptr<osg::Vec3Array> colors = dynamic_cast<osg::Vec3Array *>(geom->getColorArray());
-                        auto &color = colors->back();
-                        color.set(0.0, 1.0, 0.0);
-                        colors->dirty();
+						current_buildin_geom = geom;
 
                         // calculate area
                         osg::ref_ptr<osg::Vec3Array> vertex = dynamic_cast<osg::Vec3Array *>(geom->getVertexArray());
@@ -876,9 +933,9 @@ Result OSGWidget::intersectionCheck() {
 
     static auto plane_id = Config::get<int>("plane_id", 1);
     static auto url = Config::get<std::string>("video_url", "rtmp://58.200.131.2:1935/livetv/gxtv");
-    bool default_legal = id >= 0;
+    bool default_illegal = id >= 0;
 
-    Result result(plane_id, id, utm2llh(ground_point), llh, build_area, 0, default_legal, url);
+    Result result(plane_id, id, utm2llh(ground_point), llh, build_area, 0, default_illegal, url);
 
     return result;
 }
@@ -887,40 +944,50 @@ void OSGWidget::pointCloudMatch(Result &result) {
     Array &points = cur_points;
     if (points.empty()) return;
 
-    const osg::Vec3d &center_point = cur_position;
-    std::vector<double> point_cost;
+    //valid range
+	static double valid_min_range = Config::get<double>("valid_min_range", 20.0);
+	static double valid_max_range = Config::get<double>("valid_max_range", 100.0);
+	static double max_height_diff = Config::get<double>("max_height_diff", 10.0);
 
-    //weight function
-    auto cost = [](double d) -> double {
-        if (d <= 10) return 1;
-        else return 10.0 / d;
-    };
+	//sum all height
+	std::vector<double> height_vec;
+	for (const auto &point : points) {
+		Point ab_point = point + ref_position;
 
-    for (const auto &point : points) {
-        osg::Vec3d distance = point - center_point;
-        distance.z() = 0;
-        double d = distance.length();
-        point_cost.push_back(cost(d));
-    }
+		osg::Vec3d distance = ab_point - cur_position;
+		double d = distance.length();
+		if (valid_min_range > d || d > valid_max_range) continue;
 
-    //calculate weighted mean height
-    double cost_sum = std::accumulate(point_cost.begin(), point_cost.end(), 0.0);
-    double sum = 0;
-    for (int i = 0; i < points.size(); ++i) {
-        sum += point_cost[i] * fabs(points[i].z());
-    }
-    sum /= cost_sum;
-    double mean_height = sum;
+		height_vec.push_back(ab_point.z());
+	}
+	if (height_vec.empty()) return;
 
+	//mean height
+	double height_sum = std::accumulate(height_vec.begin(), height_vec.end(), 0.0);
+	double mean_height = height_sum / height_vec.size();
+
+	//compare
     int building_id = result.build_id;
     double dsm_height = result.center.z();
     double difference = fabs(mean_height - dsm_height);
     std::cout << "mean_height: " << mean_height << " dsm_height: " << dsm_height << " dif: " << difference << std::endl;
 
-    if (difference < 10) {
+    if (difference < max_height_diff) {
         result.is_illegal = false;
-    } else {
-        qDebug() << "building:" << building_id << "area" << result.build_area << "dif:" << difference;
+    } else if ( building_id > 0 ) {
+		static double points_density = Config::get<double>("points_density", 0.001);
+
+		//calculate change_rate
+		int valid_points_num = height_vec.size();
+		double area_density = points_density * cur_position.z();
+		double change_area = area_density * valid_points_num;
+		double change_rate = change_area / result.build_area;
+		if (change_rate <= 0) change_rate = 0;
+		if (change_rate >= 1) change_rate = 0.9;
+
+		result.change_rate = change_rate;
+        qDebug() << "building:" << building_id << "area" << result.build_area << change_rate
+			<< "mean_height:" << mean_height << "dsm_height:" << dsm_height << "dif:" << difference;
     }
 }
 
@@ -967,6 +1034,6 @@ void OSGWidget::postResult(const Result &result) {
 
     QHostAddress host_address(server_ip.c_str());
     QString host_address_str = host_address.toString();
-    qDebug() << "server address: " << host_address_str << ":" << server_port;
+	std::cout << "server address: " << host_address_str.toStdString() << " : " << server_port << std::endl;
     udp_socket_->writeDatagram(datagram.data(), datagram.size(), host_address, server_port);
 }

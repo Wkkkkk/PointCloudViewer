@@ -39,9 +39,9 @@ struct Result {
     bool is_illegal;
     std::string video_url;
 
-    Result(int i, int id, Point c, Point llh, double b_a, double c_a, bool legal, std::string url) :
+    Result(int i, int id, Point c, Point llh, double b_a, double c_a, bool illegal, std::string url) :
             plane_id(i), build_id(id), center(c), plane_llh(llh),
-            build_area(b_a), change_rate(c_a), is_illegal(legal), video_url(std::move(url)) {}
+            build_area(b_a), change_rate(c_a), is_illegal(illegal), video_url(std::move(url)) {}
 };
 
 const char root_node_name[] = "root_node";

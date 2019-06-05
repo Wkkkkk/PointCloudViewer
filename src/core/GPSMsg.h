@@ -27,10 +27,10 @@
 //xia fan
 #pragma pack(1)
 typedef struct GpsMsgs {
-    double x;
+    double x;		//相对于固定点的位移
     double y;
     double z;
-    double lat;
+    double lat;		//绝对经纬度
     double lon;
     double hei;
 
@@ -46,7 +46,7 @@ typedef struct GpsMsgs {
     bool lidar_time;
     uint64_t gps_time;
 
-    double ref_x, ref_y, ref_z; //utm
+    double ref_x, ref_y, ref_z; //固定点utm坐标(可能为0，0，0)
 } GpsMsgs_t;
 #pragma pack()
 
